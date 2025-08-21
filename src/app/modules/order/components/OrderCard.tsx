@@ -1257,7 +1257,7 @@ export default function OrderCard() {
         </Drawer>
 
         <div className="fixed bottom-0 left-0 right-0 bg-[#FEEBF6]   rounded-t-2xl border-t ">
-          {user?.address.length > 0 && (
+          {user?.address?.length > 0 && (
             <div className="px-3 py-2 left-0 right-0 flex items-center justify-between  ">
               <div className=" flex items-center gap-1">
                 <PiMapPinFill className="h-6 w-6 text-red-500  " />
