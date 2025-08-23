@@ -70,8 +70,17 @@ export async function sendTakeawayOrder(orderData: any) {
 
   const docRef = doc(db, "vikumar.azad@gmail.com", "hotel");
   try {
-    updateDoc(docRef, {
-      takeaway: { [orderData.contact]: { [orderData.orderId]: newOrder } },
+    const docSnap = await getDoc(docRef);
+    const existingData = docSnap.data()?.takeaway || {};
+    const existingUserOrders = existingData[orderData.contact] || {};
+    await updateDoc(docRef, {
+      takeaway: {
+        ...existingData,
+        [orderData.contact]: {
+          ...existingUserOrders,
+          [orderData.orderId]: newOrder,
+        },
+      },
     });
   } catch (error) {
     console.error("Error updating order:", error);
