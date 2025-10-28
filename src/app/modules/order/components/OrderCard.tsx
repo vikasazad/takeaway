@@ -334,8 +334,7 @@ export default function OrderCard() {
         return;
       }
     }
-    setLoadScript(true);
-    createOrder();
+
     setIsLoading(false);
 
     // createOrder();
@@ -615,6 +614,7 @@ export default function OrderCard() {
       setFNumber("");
       setIsLoading(false);
       setLoadScript(true);
+      createOrder();
       // here to be save user data
       // Use replace to prevent back navigation to login
       // document.body.focus();
@@ -1385,7 +1385,7 @@ export default function OrderCard() {
               onClick={() => handlePlaceOrder()}
             >
               Pay
-              {user?.tax?.gstPercentage ? (
+              {user?.tax?.restaurant ? (
                 <>
                   <span className="flex items-center">
                     <IndianRupee className="h-2 w-2" strokeWidth={3} />
@@ -1399,7 +1399,7 @@ export default function OrderCard() {
                 <>
                   <span className="flex items-center">
                     <IndianRupee className="h-2 w-2" strokeWidth={3} />
-                    {calculateTotal(ordereditems) - (discount || 0)}
+                    {finalPrice}
                   </span>
                   {isLoading && (
                     <Icons.spinner className="h-4 w-4 animate-spin" />
