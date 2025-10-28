@@ -313,7 +313,7 @@ export default function Header({ data }: { data: any }) {
         name: user.name || "",
         email: user.email || "",
         phone: user.phone || "",
-        tax: user.tax || { gstPercentage: "18" },
+        tax: user.tax || {},
         address: user.address || [],
       })
     );

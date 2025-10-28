@@ -9,8 +9,11 @@ import { getRestaurantData } from "../utils/mainRestaurantApi";
 import Category from "./category";
 import ItemCard from "./itemCard";
 import Footer from "../../footer/components/footer";
+import { addTax } from "@/lib/features/addToOrderSlice";
+import { useDispatch } from "react-redux";
 
 const Main = () => {
+  const dispatch = useDispatch();
   const router = useRouter();
   // const { isAuthenticated, token } = useSelector(
   //   (state: RootState) => state.auth
@@ -31,6 +34,7 @@ const Main = () => {
       try {
         const restaurantData = await getRestaurantData();
         setData(restaurantData);
+        dispatch(addTax(restaurantData?.tax));
       } catch (error) {
         console.error("Error fetching restaurant data:", error);
       } finally {

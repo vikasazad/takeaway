@@ -16,6 +16,7 @@ export async function getRestaurantData() {
       return {
         menu: docSnapMenu.data().menu,
         info: docSnapInfo.data().restaurant,
+        tax: docSnapInfo.data().business.gstTax?.restaurant,
       };
     }
   } catch (error) {
@@ -23,6 +24,7 @@ export async function getRestaurantData() {
     return {
       menu: false,
       info: false,
+      tax: false,
     };
   }
 }
@@ -33,7 +35,10 @@ export async function getRestaurantInfo() {
     const docSnapInfo = await getDoc(docRefInfo);
 
     if (docSnapInfo.exists()) {
-      return docSnapInfo.data().restaurant;
+      return {
+        restaurant: docSnapInfo.data().restaurant,
+        tax: docSnapInfo.data().business.gstTax?.restaurant,
+      };
     }
   } catch (error) {
     console.error("Error fetching Firestore data:", error);

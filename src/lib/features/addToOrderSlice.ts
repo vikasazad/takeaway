@@ -11,7 +11,8 @@ const initialState = {
     name: "",
     email: "",
     phone: "",
-    tax: { gstPercentage: "18" },
+    tag: "restaurant",
+    tax: { restaurant: {} },
     address: {},
   } as any,
 };
@@ -37,6 +38,12 @@ export const addToOrder = createSlice({
     addUser: (state, action) => {
       state.user = action.payload;
     },
+    addTax: (state, action) => {
+      state.user = {
+        ...state.user,
+        tax: { restaurant: action.payload },
+      };
+    },
     addInfo: (state, action) => {
       // console.log("action.payload", action.payload);
       state.info = action.payload;
@@ -55,7 +62,8 @@ export const addToOrder = createSlice({
         name: "",
         email: "",
         phone: "",
-        tax: { gstPercentage: "18" },
+        tag: "restaurant",
+        tax: { restaurant: {} },
         address: {},
       };
       state.info = {};
@@ -98,6 +106,7 @@ export const {
   addData,
   addToken,
   addUser,
+  addTax,
   increment,
   decrement,
   clearCart,

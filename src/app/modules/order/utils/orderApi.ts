@@ -21,11 +21,97 @@ export function calculateTotal(ordereditems: any) {
     return total + price * item.count;
   }, 0);
 }
-export function calculateTax(ordereditems: any, discount: number, tax: string) {
-  const total = calculateTotal(ordereditems) - discount;
-  const rounded = Math.round((total * Number(tax)) / 100);
-  return rounded;
-}
+export const calculateTax = (
+  pricePerNight: number,
+  subtotalAmount: number,
+  taxType: string,
+  taxDetails: any
+) => {
+  const taxTypeData = taxDetails[taxType];
+  if (!taxTypeData) {
+    throw new Error(`Invalid tax type: ${taxType}`);
+  }
+
+  let gstPercentage = 0;
+
+  // Check if there's an "all" key for flat rate
+  if (taxTypeData["all"]) {
+    gstPercentage = parseFloat(taxTypeData["all"]);
+  } else {
+    // Look for price-based keys dynamically
+    const priceKeys = Object.keys(taxTypeData).filter(
+      (key) =>
+        key.includes("below") ||
+        key.includes("above") ||
+        key.includes("under") ||
+        key.includes("over")
+    );
+
+    if (priceKeys.length === 0) {
+      throw new Error(`No valid tax rate found for tax type: ${taxType}`);
+    }
+
+    // Process each price-based key to find the applicable rate
+    for (const key of priceKeys) {
+      const lowerKey = key.toLowerCase();
+
+      // Extract price threshold from the key
+      const priceMatch = key.match(/(\d+(?:\.\d+)?)/);
+      if (!priceMatch) continue;
+
+      const threshold = parseFloat(priceMatch[1]);
+
+      // Check if price/night falls within this bracket
+      if (lowerKey.includes("below") || lowerKey.includes("under")) {
+        if (pricePerNight <= threshold) {
+          gstPercentage = parseFloat(taxTypeData[key]);
+          break;
+        }
+      } else if (lowerKey.includes("above") || lowerKey.includes("over")) {
+        if (pricePerNight > threshold) {
+          gstPercentage = parseFloat(taxTypeData[key]);
+          break;
+        }
+      }
+    }
+
+    // If no bracket matched, try to find a default or fallback rate
+    if (gstPercentage === 0) {
+      // Look for the lowest threshold as fallback
+      const sortedKeys = priceKeys.sort((a, b) => {
+        const aPrice = parseFloat(a.match(/(\d+(?:\.\d+)?)/)?.[1] || "0");
+        const bPrice = parseFloat(b.match(/(\d+(?:\.\d+)?)/)?.[1] || "0");
+        return aPrice - bPrice;
+      });
+
+      if (sortedKeys.length > 0) {
+        gstPercentage = parseFloat(taxTypeData[sortedKeys[0]]);
+      }
+    }
+  }
+
+  if (gstPercentage === 0) {
+    throw new Error(
+      `Could not determine tax rate for ${taxType} with price/night: ${pricePerNight}`
+    );
+  }
+
+  // Calculate amounts
+  const gstAmount = Math.round((subtotalAmount * gstPercentage) / 100);
+  const cgstPercentage = gstPercentage / 2;
+  const sgstPercentage = gstPercentage / 2;
+  const cgstAmount = (subtotalAmount * cgstPercentage) / 100;
+  const sgstAmount = (subtotalAmount * sgstPercentage) / 100;
+
+  return {
+    gstAmount: Math.round(gstAmount * 100) / 100,
+    gstPercentage,
+    cgstAmount: Math.round(cgstAmount * 100) / 100,
+    cgstPercentage,
+    sgstAmount: Math.round(sgstAmount * 100) / 100,
+    sgstPercentage,
+  };
+};
 
 export async function sendTakeawayOrder(orderData: any) {
   console.log("HERE");

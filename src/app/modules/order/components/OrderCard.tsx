@@ -171,20 +171,16 @@ export default function OrderCard() {
       console.log("couponResult", couponResult);
       if (couponResult) {
         // console.log("couponResult", couponResult);
-        setCoupon({
-          code: couponResult.code,
-          discount: couponResult.amount,
-          type: couponResult.type,
-        });
+        setCoupon(couponResult);
         const total = ordereditems.reduce((total, item) => {
           const price = item.item.price[item.selectedType];
           return total + price * item.count;
         }, 0);
         // console.log("total", total);
         if (couponResult.type === "percentage") {
-          setDiscount(total * (couponResult.amount.replace("%", "") / 100));
+          setDiscount(total * (couponResult.discount.replace("%", "") / 100));
         } else {
-          setDiscount(couponResult.amount);
+          setDiscount(couponResult.discount);
         }
         setCouponInput("");
       } else {
@@ -240,15 +236,22 @@ export default function OrderCard() {
   // console.log("discount", discount);
   useEffect(() => {
     const total =
-      ordereditems.reduce((total, item) => {
-        const price = item.item.price[item.selectedType];
-        return total + price * item.count;
-      }, 0) - discount;
+      Math.round(
+        ordereditems.reduce((total, item) => {
+          const price = item.item.price[item.selectedType];
+          return total + price * item.count;
+        }, 0)
+      ) - discount;
     // console.log("total", total);
-    const digit = Number(user?.tax.gstPercentage) || 0;
-    // console.log(digit);
-    const tax = Math.round((total * digit) / 100);
-
+    const tax =
+      Number(
+        calculateTax(
+          total,
+          total,
+          user?.tag === "hotel" ? "dining" : "restaurant",
+          user?.tax
+        ).gstAmount
+      ) || 0;
     setfinalPrice(total + tax);
   }, [ordereditems, user, coupon]);
 
@@ -383,19 +386,23 @@ export default function OrderCard() {
               selectedToggle === "Delivery"
                 ? generateOrderId("RES", "DEL")
                 : generateOrderId("RES", "TY");
+            const gst = calculateTax(
+              calculateTotal(ordereditems) - (discount || 0),
+              calculateTotal(ordereditems) - (discount || 0),
+              user?.tag === "hotel" ? "dining" : "restaurant",
+              user?.tax
+            );
             const orderData: any = {
               orderId: orderId,
               orderedItem: [],
               orderAmount: finalPrice,
               subtotal: calculateTotal(ordereditems),
-              gstPercentage: user?.tax.gstPercentage || "",
-              gstAmount: user?.tax.gstPercentage
-                ? calculateTax(
-                    ordereditems,
-                    discount || 0,
-                    user?.tax.gstPercentage
-                  )
-                : "",
+              gstPercentage: gst.gstPercentage || "",
+              gstAmount: gst.gstAmount || "",
+              cgstAmount: gst.cgstAmount,
+              cgstPercentage: gst.cgstPercentage,
+              sgstAmount: gst.sgstAmount,
+              sgstPercentage: gst.sgstPercentage,
               contact: contactDetails.phone || "",
               name: contactDetails.name || "",
               email: contactDetails.email || "",
@@ -410,6 +417,7 @@ export default function OrderCard() {
               discountCode: coupon?.code || "",
               discountAmount: discount || 0,
               discountType: coupon?.type || "",
+              discountDiscount: coupon?.discount || 0,
               orderType: selectedToggle,
               address:
                 selectedToggle === "Delivery"
@@ -495,6 +503,12 @@ export default function OrderCard() {
             selectedToggle === "Delivery"
               ? generateOrderId("RES", "DEL")
               : generateOrderId("RES", "TY");
+          const gst = calculateTax(
+            calculateTotal(ordereditems) - (discount || 0),
+            calculateTotal(ordereditems) - (discount || 0),
+            user?.tag === "hotel" ? "dining" : "restaurant",
+            user?.tax
+          );
           console.log("New Order ID:", orderId);
           console.log("first", ordereditems);
           const orderData: any = {
@@ -505,8 +519,12 @@ export default function OrderCard() {
             orderedItem: [],
             orderAmount: finalPrice,
             subtotal: calculateTotal(ordereditems),
-            gstPercentage: user?.tax.gstPercentage || "",
-            gstAmount: "",
+            gstPercentage: gst.gstPercentage || "",
+            gstAmount: gst.gstAmount || "",
+            cgstAmount: gst.cgstAmount,
+            cgstPercentage: gst.cgstPercentage,
+            sgstAmount: gst.sgstAmount,
+            sgstPercentage: gst.sgstPercentage,
             contactNo: "",
             name: "",
             email: "",
@@ -644,12 +662,17 @@ export default function OrderCard() {
     }
     // setUserLogin(true);
     // Phone will be stored by setupJWTAfterLogin
+    const data = await getRestaurantInfo();
+    if (!data) {
+      toast.error("Something went wrong");
+      return;
+    }
     dispatch(
       addUser({
         name: user.name || "",
         email: user.email || "",
         phone: user.phone || "",
-        tax: user.tax || { gstPercentage: "18" },
+        tax: { restaurant: data?.tax },
         address: user.address || [],
       })
     );
@@ -666,11 +689,7 @@ export default function OrderCard() {
           ? user?.address?.find((item: any) => item.default)?.address
           : "",
     });
-    const data = await getRestaurantInfo();
-    if (!data) {
-      toast.error("Something went wrong");
-      return;
-    }
+
     dispatch(addInfo(data));
 
     try {
@@ -1001,11 +1020,12 @@ export default function OrderCard() {
                 </p>
               </div>
               {coupon ? (
-                <div className="h-5 flex items-center justify-between w-full px-2 py-0 rounded-xl bg-pink-200/50 ">
-                  <div className="text-xs ">
+                <div className="flex items-center justify-between w-full px-2 py-1 rounded-xl bg-pink-200/50 gap-2">
+                  <div className="text-xs flex-1 flex flex-wrap items-center gap-1">
                     You saved {""}
-                    <span className="text-green-500 text-md font-semibold">
-                      ₹{discount}
+                    <span className="text-green-500 text-md font-semibold flex items-center gap-1">
+                      <IndianRupee className="h-3 w-3" strokeWidth={3} />
+                      {discount}
                     </span>{" "}
                     with{" "}
                     <span className="text-blue-500 text-md font-semibold">
@@ -1014,7 +1034,7 @@ export default function OrderCard() {
                   </div>
                   <Button
                     variant="ghost"
-                    className="p-0 text-xs text-blue-500 underline"
+                    className="p-0 text-xs text-blue-500 underline flex-shrink-0"
                     onClick={() => {
                       setCoupon(null);
                       setDiscount(0);
@@ -1048,8 +1068,11 @@ export default function OrderCard() {
                     <Input
                       placeholder="Enter code"
                       value={couponInput}
-                      onChange={(e) => setCouponInput(e.target.value)}
+                      onChange={(e) =>
+                        setCouponInput(e.target.value.toUpperCase())
+                      }
                       className="rounded-lg mb-2"
+                      autoFocus
                     />
                   </div>
                   <DrawerFooter className="px-3 py-4  bg-background rounded-2xl">
@@ -1120,14 +1143,15 @@ export default function OrderCard() {
                             <Info className="h-4 w-4 text-muted-foreground" />
                           </PopoverTrigger>
                         </div>
-                        <span className="text-sm">
-                          ₹
-                          {user?.tax?.gstPercentage
+                        <span className="text-sm flex items-center gap-1">
+                          <IndianRupee className="h-3 w-3" />
+                          {user?.tax
                             ? calculateTax(
-                                ordereditems,
-                                discount || 0,
-                                user?.tax?.gstPercentage
-                              )
+                                calculateTotal(ordereditems) - (discount || 0),
+                                calculateTotal(ordereditems) - (discount || 0),
+                                user?.tag === "hotel" ? "dining" : "restaurant",
+                                user?.tax
+                              ).gstAmount
                             : 0}
                         </span>
                       </div>
@@ -1145,12 +1169,17 @@ export default function OrderCard() {
                                 className="h-3 w-3"
                                 strokeWidth={3}
                               />
-                              {user?.tax?.gstPercentage
+                              {user?.tax
                                 ? calculateTax(
-                                    ordereditems,
-                                    discount || 0,
-                                    user?.tax?.gstPercentage
-                                  )
+                                    calculateTotal(ordereditems) -
+                                      (discount || 0),
+                                    calculateTotal(ordereditems) -
+                                      (discount || 0),
+                                    user?.tag === "hotel"
+                                      ? "dining"
+                                      : "restaurant",
+                                    user?.tax
+                                  ).gstAmount
                                 : 0}
                             </span>
                           </div>
@@ -1358,15 +1387,9 @@ export default function OrderCard() {
               Pay
               {user?.tax?.gstPercentage ? (
                 <>
-                  <span className="flex items-center text-sm">
+                  <span className="flex items-center">
                     <IndianRupee className="h-2 w-2" strokeWidth={3} />
-                    {calculateTotal(ordereditems) +
-                      calculateTax(
-                        ordereditems,
-                        discount || 0,
-                        user?.tax?.gstPercentage
-                      ) -
-                      (discount || 0)}
+                    {finalPrice}
                   </span>
                   {isLoading && (
                     <Icons.spinner className="h-4 w-4 animate-spin" />
