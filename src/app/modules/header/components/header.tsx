@@ -174,7 +174,7 @@ export default function Header({ data }: { data: any }) {
   }, [user.email]);
 
   useEffect(() => {
-    if (user?.phone.length > 0) {
+    if (user?.phone && user?.phone?.length > 0) {
       const unsubscribe = findOrderData(
         "vikumar.azad@gmail.com",
         user.phone,
