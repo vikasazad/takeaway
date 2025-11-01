@@ -185,7 +185,7 @@ export default function Header({ data }: { data: any }) {
             Object.entries(result?.current).forEach(([, value]) => {
               orders.push(value);
             });
-            if (result?.prev.length > 0) {
+            if (result?.prev?.length > 0) {
               result?.prev.reverse().forEach((item: any) => {
                 orders.push(item);
               });

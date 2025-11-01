@@ -1141,20 +1141,22 @@ export default function OrderTracking() {
                     </span>
                   </div>
 
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>
-                      Savings with{" "}
+                  {finalOrder?.discountAmount > 0 && (
+                    <div className="flex justify-between text-xs text-gray-500">
                       <span>
-                        {finalOrder.discountCode ||
-                          delivery?.payment?.discount?.discountCode}
+                        Savings with{" "}
+                        <span>
+                          {finalOrder.discountCode ||
+                            delivery?.payment?.discount?.discountCode}
+                        </span>
                       </span>
-                    </span>
-                    <span className="flex items-center text-green-600 ">
-                      - <IndianRupee className="w-3 h-3" />
-                      {finalOrder.discountAmount ||
-                        delivery?.payment?.discount?.discountAmount}
-                    </span>
-                  </div>
+                      <span className="flex items-center text-green-600 ">
+                        - <IndianRupee className="w-3 h-3" />
+                        {finalOrder.discountAmount ||
+                          delivery?.payment?.discount?.discountAmount}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="border-t pt-3 flex justify-between font-semibold">

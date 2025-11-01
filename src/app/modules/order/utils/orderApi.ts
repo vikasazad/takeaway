@@ -141,16 +141,19 @@ export async function sendTakeawayOrder(orderData: any) {
       gst: {
         gstAmount: orderData.gstAmount,
         gstPercentage: orderData.gstPercentage,
-        cgstAmount: "",
-        cgstPercentage: "",
-        sgstAmount: "",
-        sgstPercentage: "",
+        cgstAmount: orderData.cgstAmount,
+        cgstPercentage: orderData.cgstPercentage,
+        sgstAmount: orderData.sgstAmount,
+        sgstPercentage: orderData.sgstPercentage,
       },
-      discount: {
-        type: orderData.discountType || "none",
-        amount: orderData.discountAmount || 0,
-        code: orderData.discountCode || "",
-      },
+      discount: [
+        {
+          type: orderData.discountType || "none",
+          amount: orderData.discountAmount || 0,
+          code: orderData.discountCode || "",
+          discount: orderData.discountDiscount || 0,
+        },
+      ],
     },
   };
 
@@ -175,7 +178,7 @@ export async function sendTakeawayOrder(orderData: any) {
 }
 export async function sendHotelDeliveryOrder(orderData: any, attendant: any) {
   console.log("HERE");
-
+  console.log("orderData delivery", orderData);
   const newOrder = {
     location: orderData.orderType,
     orderId: orderData.orderId,
@@ -193,7 +196,6 @@ export async function sendHotelDeliveryOrder(orderData: any, attendant: any) {
     deliveryPerson: {
       name: attendant?.name || "",
       contact: attendant?.contact || "",
-
       location: {
         lat: "",
         lng: "",
@@ -212,16 +214,19 @@ export async function sendHotelDeliveryOrder(orderData: any, attendant: any) {
       gst: {
         gstAmount: orderData.gstAmount,
         gstPercentage: orderData.gstPercentage,
-        cgstAmount: "",
-        cgstPercentage: "",
-        sgstAmount: "",
-        sgstPercentage: "",
+        cgstAmount: orderData.cgstAmount,
+        cgstPercentage: orderData.cgstPercentage,
+        sgstAmount: orderData.sgstAmount,
+        sgstPercentage: orderData.sgstPercentage,
       },
-      discount: {
-        type: orderData.discountType || "none",
-        amount: orderData.discountAmount || 0,
-        code: orderData.discountCode || "",
-      },
+      discount: [
+        {
+          type: orderData.discountType || "none",
+          amount: orderData.discountAmount || 0,
+          code: orderData.discountCode || "",
+          discount: orderData.discountDiscount || 0,
+        },
+      ],
     },
   };
 

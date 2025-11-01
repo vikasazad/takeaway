@@ -14,7 +14,8 @@ import {
   IndianRupee,
   Copy,
   AlertCircle,
-  // Check,
+  HandPlatter,
+  Check,
 } from "lucide-react";
 import { getDeliveryOrders } from "../modules/tracking/utils/deliveryLocationApi";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -24,8 +25,9 @@ import { useDispatch } from "react-redux";
 export default function Page() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const [customPhone, setCustomPhone] = useState("");
+  const [orderId, setOrderId] = useState("");
   const [orders, setOrders] = useState(null);
+  const [copied, setCopied] = useState<Record<string, boolean>>({});
   const [geolocationStatus, setGeolocationStatus] = useState<
     "checking" | "granted" | "denied" | "prompt"
   >("checking");
@@ -88,6 +90,14 @@ export default function Page() {
     }
   };
 
+  const handleCopyWithTick = (key: string, value: string) => {
+    navigator.clipboard.writeText(value);
+    setCopied((prev) => ({ ...prev, [key]: true }));
+    setTimeout(() => {
+      setCopied((prev) => ({ ...prev, [key]: false }));
+    }, 1500);
+  };
+
   const requestGeolocationPermission = () => {
     navigator.geolocation.getCurrentPosition(
       () => {
@@ -108,36 +118,57 @@ export default function Page() {
     );
   };
 
-  const handleStartDelivery = (order: any) => {
+  const handleStartDelivery = (data: any | string) => {
     if (geolocationStatus !== "granted") {
       alert("Please enable geolocation permission to start delivery");
       return;
     }
-    const data = {
-      orderId: order.orderId,
-      customer: order.customer,
-      address: order.address,
-      items: order.items,
-      payment: order.payment.paymentStatus,
-      restaurantCoords: {
-        lat: 28.343747,
-        lng: 77.336315,
-      },
-    };
-    console.log(JSON.stringify(data));
-    dispatch(setDelivery(data));
-    router.push("/delivery");
+    if (typeof data === "string") {
+      const _order: any = Object.values(orders || {})
+        .flatMap((phoneOrders: any) => Object.values(phoneOrders))
+        .find((order: any) => order.orderId === data);
+      console.log(_order);
+      const deliveryData = {
+        orderId: _order.orderId,
+        customer: _order.customer,
+        address: _order.address,
+        items: _order.items,
+        payment: _order.payment.paymentStatus,
+        restaurantCoords: {
+          lat: 28.343747,
+          lng: 77.336315,
+        },
+      };
+      console.log(deliveryData);
+      dispatch(setDelivery(deliveryData));
+      router.push("/delivery");
+    } else {
+      const deliveryData = {
+        orderId: data.orderId,
+        customer: data.customer,
+        address: data.address,
+        items: data.items,
+        payment: data.payment.paymentStatus,
+        restaurantCoords: {
+          lat: 28.343747,
+          lng: 77.336315,
+        },
+      };
+      console.log(deliveryData);
+      dispatch(setDelivery(deliveryData));
+      router.push("/delivery");
+    }
   };
 
-  const handleCustomDelivery = () => {
-    if (geolocationStatus !== "granted") {
-      alert("Please enable geolocation permission to start delivery");
-      return;
-    }
-    if (customPhone.trim()) {
-      router.push(`/delivery?phone=${customPhone}`);
-    }
-  };
+  // const handleCustomDelivery = () => {
+  //   if (geolocationStatus !== "granted") {
+  //     alert("Please enable geolocation permission to start delivery");
+  //     return;
+  //   }
+  //   if (customPhone.trim()) {
+  //     router.push(`/delivery?phone=${customPhone}`);
+  //   }
+  // };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -212,24 +243,22 @@ export default function Page() {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              Enter customer phone to start delivery
+              Enter order id to start delivery
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <Input
-                id="phone"
-                type="tel"
-                placeholder="Enter customer phone number"
-                value={customPhone}
-                onChange={(e) => setCustomPhone(e.target.value)}
+                id="orderId"
+                type="text"
+                placeholder="Enter order id"
+                value={orderId}
+                onChange={(e) => setOrderId(e.target.value.toUpperCase())}
               />
 
               <Button
-                onClick={handleCustomDelivery}
-                disabled={
-                  !customPhone.trim() || geolocationStatus !== "granted"
-                }
+                onClick={() => handleStartDelivery(orderId)}
+                disabled={!orderId.trim() || geolocationStatus !== "granted"}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 Start Delivery
@@ -265,16 +294,38 @@ export default function Page() {
 
                         <div className="space-y-2 text-sm text-gray-600">
                           <div className="flex items-center gap-2">
+                            <HandPlatter className="h-4 w-4" />
+                            {order.orderId}
+                            {copied[`orderId-${order.orderId}`] ? (
+                              <Check className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <Copy
+                                className="h-4 w-4 cursor-pointer"
+                                onClick={() =>
+                                  handleCopyWithTick(
+                                    `orderId-${order.orderId}`,
+                                    order.orderId
+                                  )
+                                }
+                              />
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
                             <Phone className="h-4 w-4" />
                             {order.customer?.phone}
-                            <Copy
-                              className="h-4 w-4"
-                              onClick={() => {
-                                navigator.clipboard.writeText(
-                                  order.customer?.phone
-                                );
-                              }}
-                            />
+                            {copied[`phone-${order.orderId}`] ? (
+                              <Check className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <Copy
+                                className="h-4 w-4 cursor-pointer"
+                                onClick={() =>
+                                  handleCopyWithTick(
+                                    `phone-${order.orderId}`,
+                                    order.customer?.phone
+                                  )
+                                }
+                              />
+                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4" />
@@ -290,11 +341,6 @@ export default function Page() {
                                 minute: "2-digit",
                               }
                             )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500">
-                              Order ID: {order.orderId}
-                            </span>
                           </div>
                         </div>
 

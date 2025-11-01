@@ -149,6 +149,7 @@ export default function OrderCard() {
     name: user?.name || "User",
     phone: user?.phone || "",
     email: user?.email || "",
+    tag: user?.tag || "restaurant",
     address:
       user?.address?.length > 0
         ? user?.address?.find((item: any) => item.default)?.address
@@ -333,11 +334,59 @@ export default function OrderCard() {
         setPhoneDrawerOpen(true);
         return;
       }
+      setLoadScript(true);
+      createOrder();
     }
 
-    setIsLoading(false);
-
+    //   const orderId =
+    //     selectedToggle === "Delivery"
+    //       ? generateOrderId("RES", "DEL")
+    //       : generateOrderId("RES", "TY");
+    //   const gst = calculateTax(
+    //     calculateTotal(ordereditems) - (discount || 0),
+    //     calculateTotal(ordereditems) - (discount || 0),
+    //     user?.tag === "hotel" ? "dining" : "restaurant",
+    //     user?.tax
+    //   );
+    //   const orderData: any = {
+    //     orderId: orderId,
+    //     orderedItem: [],
+    //     orderAmount: finalPrice,
+    //     subtotal: calculateTotal(ordereditems),
+    //     gstPercentage: gst.gstPercentage || "",
+    //     gstAmount: gst.gstAmount || "",
+    //     cgstAmount: gst.cgstAmount,
+    //     cgstPercentage: gst.cgstPercentage,
+    //     sgstAmount: gst.sgstAmount,
+    //     sgstPercentage: gst.sgstPercentage,
+    //     contact: contactDetails.phone || "",
+    //     name: contactDetails.name || "",
+    //     email: contactDetails.email || "",
+    //     timeOfOrder: new Date().toLocaleTimeString("en-US", {
+    //       hour: "2-digit",
+    //       minute: "2-digit",
+    //       hour12: true,
+    //     }),
+    //     timeOfService: "",
+    //     estimatedDeliveryTime: "",
+    //     specialrequirements: specialRequirements,
+    //     discountCode: coupon?.code || "",
+    //     discountAmount: discount || 0,
+    //     discountType: coupon?.type || "",
+    //     discountDiscount: coupon?.discount || 0,
+    //     orderType: selectedToggle,
+    //     address:
+    //       selectedToggle === "Delivery"
+    //         ? user?.address?.find(
+    //             (item: any) => item.type === contactDetails.type
+    //           )
+    //         : "",
+    //   };
+    //   console.log("orderData", orderData);
+    // }
+    // setLoadScript(true);
     // createOrder();
+    setIsLoading(false);
     // router.push("/Detail");
   };
   // console.log("type", contactDetails.type);
@@ -425,7 +474,6 @@ export default function OrderCard() {
                     )
                   : "",
             };
-            console.log("orderData", orderData);
 
             ordereditems.map((er: any) => {
               return orderData.orderedItem.push(createOrderData(er));
@@ -436,6 +484,7 @@ export default function OrderCard() {
               "vikumar.azad@gmail.com"
             );
             console.log("attendant", attendant);
+            console.log("orderData", orderData);
 
             if (selectedToggle === "Delivery") {
               await sendHotelDeliveryOrder(orderData, attendant);
@@ -672,6 +721,7 @@ export default function OrderCard() {
         name: user.name || "",
         email: user.email || "",
         phone: user.phone || "",
+        tag: "restaurant",
         tax: { restaurant: data?.tax },
         address: user.address || [],
       })
@@ -680,6 +730,7 @@ export default function OrderCard() {
       name: user.name || "",
       email: user.email || "",
       phone: user.phone || "",
+      tag: "restaurant",
       type:
         user?.address?.length > 0
           ? user?.address?.find((item: any) => item.default)?.type

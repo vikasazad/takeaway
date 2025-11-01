@@ -113,7 +113,8 @@ export const getDeliveryStatus = (
             name: docSnap.data()?.delivery[phone]?.[orderId]?.deliveryPerson
               .name,
             phone:
-              docSnap.data()?.delivery[phone]?.[orderId]?.deliveryPerson.phone,
+              docSnap.data()?.delivery[phone]?.[orderId]?.deliveryPerson
+                .contact,
           });
       }
     },
@@ -283,10 +284,10 @@ export const clearDelivery = async (
     });
   }
   await updateDoc(deliveryRef, {
-    [`delivery.${customerPhone}.${orderId}`]: deleteField(),
+    [`delivery.${customerPhone}`]: deleteField(),
   });
 
-  await sendWhatsAppMessageDeliveryCompleted(customerPhone, [
+  await sendWhatsAppMessageDeliveryCompleted(`+91${customerPhone}`, [
     orderId,
     address,
     "Wah Bhai Wah",
