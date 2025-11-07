@@ -13,7 +13,7 @@ const initialState = {
     phone: "",
     tag: "restaurant",
     tax: { restaurant: {} },
-    address: {},
+    address: [],
   } as any,
 };
 
@@ -64,7 +64,7 @@ export const addToOrder = createSlice({
         phone: "",
         tag: "restaurant",
         tax: { restaurant: {} },
-        address: {},
+        address: [],
       };
       state.info = {};
     },
@@ -87,6 +87,10 @@ export const addToOrder = createSlice({
     clearCart: (state) => {
       state.addToOrderData = [];
       state.addedItemIds = [];
+      state.finalOrder = {};
+    },
+    clearFinalOrder: (state) => {
+      state.finalOrder = {};
     },
     clearSpecific: (state, action) => {
       state.addToOrderData = state.addToOrderData.filter(
@@ -115,5 +119,6 @@ export const {
   addInfo,
   addOrders,
   clearLogout,
+  clearFinalOrder,
 } = addToOrder.actions;
 export default addToOrder.reducer;

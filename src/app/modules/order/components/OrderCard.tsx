@@ -13,6 +13,7 @@ import {
   Info,
   IndianRupee,
   Ellipsis,
+  CircleHelp,
 } from "lucide-react";
 import { PiMapPinFill } from "react-icons/pi";
 
@@ -127,7 +128,9 @@ export default function OrderCard() {
   const [phoneDrawerOpen, setPhoneDrawerOpen] = useState(false);
   const [fNumber, setFNumber] = useState("");
   const [verificationId, setVerificationId] = useState<string>("");
+  const [isCouponLoading, setIsCouponLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFinalLoading, setIsFinalLoading] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otp, setOtp] = useState("");
   const [stage, setStage] = useState<"phone" | "otp">("phone");
@@ -151,20 +154,22 @@ export default function OrderCard() {
     email: user?.email || "",
     tag: user?.tag || "restaurant",
     address:
-      user?.address?.length > 0
-        ? user?.address?.find((item: any) => item.default)?.address
-        : "",
+      (user?.address?.length > 0 &&
+        user?.address?.find((item: any) => item.default)?.address) ||
+      user?.address?.[0].address,
+
     type:
-      user?.address?.length > 0
-        ? user?.address?.find((item: any) => item.default)?.type
-        : "",
+      (user?.address?.length > 0 &&
+        user?.address?.find((item: any) => item.default)?.type) ||
+      user?.address?.[0]?.type,
   });
   const [addressDrawerOpen, setAddressDrawerOpen] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<string>("");
 
-  // console.log("coupon", coupon);
+  // console.log("contactDetails", contactDetails);
 
   const handleCouponApply = async () => {
+    setIsCouponLoading(true);
     if (couponInput.trim()) {
       // Mock coupon validation - in real app, this would be an API call
       const couponCode = couponInput.trim().toUpperCase();
@@ -189,21 +194,28 @@ export default function OrderCard() {
       }
     }
     setIsCouponDrawerOpen(false);
+    setIsCouponLoading(false);
   };
 
   const handleContactDetailsSave = async () => {
+    setIsLoading(true);
     if (
       user?.name === contactDetails.name &&
       user?.phone === contactDetails.phone
     ) {
       toast.success("Contact details saved successfully");
       setContactDetailsDrawerOpen(false);
+      setIsLoading(false);
       return;
     } else {
       const res = await saveUserContactDetails(user?.phone, contactDetails);
       console.log("res", res);
-      if (!res) toast.error("Failed to save contact details");
+      if (!res) {
+        toast.error("Failed to save contact details");
+        setIsLoading(false);
+      }
       setContactDetailsDrawerOpen(false);
+      setIsLoading(false);
     }
   };
 
@@ -304,6 +316,7 @@ export default function OrderCard() {
   const handleSpecialRequestsClear = () => {
     setTempSpecialRequirements("");
     setSpecialRequirements("");
+    setIsSpecialRequestsOpen(false);
   };
 
   // console.log(finalPrice);
@@ -324,13 +337,14 @@ export default function OrderCard() {
     return object;
   };
   const handlePlaceOrder = async () => {
-    setIsLoading(true);
+    setIsFinalLoading(true);
     if (user?.address?.length === 0 && selectedToggle === "Delivery") {
       router.push("/address");
+      setIsFinalLoading(false);
       return;
     } else {
       if (contactDetails.phone === "") {
-        setIsLoading(false);
+        setIsFinalLoading(false);
         setPhoneDrawerOpen(true);
         return;
       }
@@ -386,7 +400,7 @@ export default function OrderCard() {
     // }
     // setLoadScript(true);
     // createOrder();
-    setIsLoading(false);
+    // setIsLoading(false);
     // router.push("/Detail");
   };
   // console.log("type", contactDetails.type);
@@ -543,7 +557,7 @@ export default function OrderCard() {
               //   "table"
               // );
             }
-
+            setIsFinalLoading(false);
             router.push("/orderConfirmation");
           });
         } else {
@@ -597,6 +611,41 @@ export default function OrderCard() {
           router.push("/orderConfirmation");
           alert("Payment failed");
         }
+      },
+      modal: {
+        ondismiss: function () {
+          // Code to run when the checkout form is closed by the user
+          console.log("Checkout form closed");
+          setIsFinalLoading(false);
+
+          // Clean up reCAPTCHA verifier
+          // if (window.recaptchaVerifier) {
+          //   console.log("Clearing recaptcha verifier");
+          //   try {
+          //     window.recaptchaVerifier.clear();
+          //   } catch (error) {
+          //     console.log("Error clearing recaptcha:", error);
+          //   }
+          //   window.recaptchaVerifier = null;
+          // }
+
+          // // Remove and recreate reCAPTCHA container to fully reset it
+          // const recaptchaContainer = document.getElementById(
+          //   "recaptcha-container"
+          // );
+          // if (recaptchaContainer && recaptchaContainer.parentNode) {
+          //   const parent = recaptchaContainer.parentNode;
+          //   const newContainer = document.createElement("div");
+          //   newContainer.id = "recaptcha-container";
+          //   parent.replaceChild(newContainer, recaptchaContainer);
+          // }
+
+          // // Remove reCAPTCHA badge if present
+          // const recaptchaBadge = document.querySelector(".grecaptcha-badge");
+          // if (recaptchaBadge && recaptchaBadge.parentNode) {
+          //   recaptchaBadge.parentNode.removeChild(recaptchaBadge);
+          // }
+        },
       },
     };
 
@@ -654,16 +703,19 @@ export default function OrderCard() {
       // Stop the countdown when OTP is successfully verified
       stopCountdown();
 
-      handleAfterLogin();
-      // setUserLogin(true);
+      const res = await handleAfterLogin();
+      if (!res) toast.error("Something went wrong. Please try again.");
       setPhoneDrawerOpen(false);
+      setIsLoading(false);
       setStage("phone");
       setOtp("");
       setPhoneNumber("");
       setFNumber("");
-      setIsLoading(false);
-      setLoadScript(true);
-      createOrder();
+
+      // setUserLogin(true);
+
+      // setLoadScript(true);
+      // createOrder();
       // here to be save user data
       // Use replace to prevent back navigation to login
       // document.body.focus();
@@ -706,7 +758,7 @@ export default function OrderCard() {
       );
       if (!register) {
         toast.error("Something went wrong");
-        return;
+        return false;
       }
     }
     // setUserLogin(true);
@@ -714,7 +766,7 @@ export default function OrderCard() {
     const data = await getRestaurantInfo();
     if (!data) {
       toast.error("Something went wrong");
-      return;
+      return false;
     }
     dispatch(
       addUser({
@@ -747,21 +799,21 @@ export default function OrderCard() {
       // Set up JWT after successful login
       await setupJWTAfterLogin(fNumber);
       console.log("User logged in and JWT token created");
+      return true;
     } catch (error) {
       console.error("Error setting up JWT after login:", error);
+      return false;
     }
-
-    console.log("user", user);
   };
 
   return (
     <>
       <div id="recaptcha-container" />
-      <div className=" border-b border-[#f0f0f0] rounded-bl-3xl px-2 py-3 box-shadow-lg">
+      <div className=" border-b border-[#f0f0f0] rounded-bl-3xl p-2 [box-shadow:var(--shadow-s)]">
         <div className="flex items-center gap-2">
           <div
             className="ml-2 w-7 h-8  border-2 border-muted rounded-lg box-shadow-lg flex items-center justify-center"
-            onClick={() => router.back()}
+            onClick={() => router.push("/")}
           >
             <ChevronLeft className="h-6 w-6 " strokeWidth={3} />
           </div>
@@ -773,7 +825,7 @@ export default function OrderCard() {
           </div>
         </div>
       </div>
-      <div className="w-full max-w-md mx-auto p-4">
+      <div className="w-full max-w-md mx-auto p-4 space-y-4 mb-[150px]">
         {isPending && (
           <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="flex flex-col items-center gap-2">
@@ -791,15 +843,15 @@ export default function OrderCard() {
           />
         )}
 
-        <Card className="relative rounded-3xl">
+        <Card className="relative rounded-3xl [box-shadow:var(--shadow-s)]">
           <CardHeader className="p-4">
             <div className="flex items-center justify-between">
-              <h1 className="text-md font-bold">{selectedToggle} Order</h1>
+              <h1 className="text-md font-medium">{selectedToggle} Order</h1>
 
               <HandPlatter className="h-6 w-6" />
             </div>
           </CardHeader>
-          <CardContent className="px-3 py-3 space-y-4">
+          <CardContent className="px-3 py-3 space-y-6">
             {ordereditems.map((item, id) => (
               <div key={id} className="flex items-start justify-between">
                 <div className="flex items-start space-x-3">
@@ -823,20 +875,21 @@ export default function OrderCard() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-medium text-sm">{item.item.name}</h3>
+                    <h3 className="font-bold text-sm">{item.item.name}</h3>
                     <div className="flex items-center gap-2">
                       <p className="text-xs text-muted-foreground">
                         {item.selectedType}
                       </p>
                       <Dot className="h-2 w-2 text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground">
-                        ₹{item.item.price[item.selectedType]}
+                      <p className="flex items-center  text-xs text-muted-foreground">
+                        <IndianRupee className="h-3 w-3" />
+                        {item.item.price[item.selectedType]}
                       </p>
                     </div>
                   </div>
                 </div>
                 <div className="text-right ">
-                  <div className="inline-flex items-center rounded-md bg-white border border-grey">
+                  <div className="inline-flex items-center rounded-md text-white bg-white [background:var(--bg-red)] [box-shadow:var(--shadow-s)]">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -862,58 +915,85 @@ export default function OrderCard() {
                       </DrawerTrigger>
                       {activeItem &&
                         typeof activeItem.item.price === "object" && (
-                          <DrawerContent className="h-[250px]">
+                          <DrawerContent className=" rounded-t-2xl">
                             <DrawerHeader>
                               <DrawerTitle>{activeItem.item.name}</DrawerTitle>
                             </DrawerHeader>
                             <DrawerDescription></DrawerDescription>
-                            <div className="py-6 px-4">
+                            <div className="  px-4 ">
                               <RadioGroup
                                 value={selectedPortion}
                                 onValueChange={setSelectedPortion}
+                                className="w-full flex items-center justify-between gap-3"
                               >
                                 {Object.entries(activeItem.item.price).map(
                                   ([size, price]: any) => (
                                     <div
                                       key={size}
-                                      className="flex items-center justify-between py-2"
+                                      className={`w-full p-4 rounded-lg [box-shadow:var(--shadow-inset)] ${
+                                        selectedPortion === size
+                                          ? "[box-shadow:var(--shadow-m)] bg-[#ff8080]"
+                                          : ""
+                                      }`}
                                     >
-                                      <Label htmlFor={size}>{size}</Label>
-                                      <div className="flex items-center space-x-4">
-                                        <span className="text-green-500">
-                                          + {price}
-                                        </span>
+                                      <div className="flex items-center justify-between">
+                                        <Label
+                                          htmlFor={size}
+                                          className="text-sm  text-muted-foreground font-semibold"
+                                        >
+                                          {size}
+                                        </Label>
                                         <RadioGroupItem
                                           value={size}
                                           id={size}
+                                          className="w-5 h-5"
                                         />
+                                      </div>
+                                      <div className=" pt-3 ">
+                                        <span
+                                          className={` flex items-center gap-1 ${
+                                            selectedPortion === size
+                                              ? "text-white"
+                                              : "text-green-500"
+                                          } text-lg font-bold leading-none`}
+                                        >
+                                          <IndianRupee
+                                            className="h-3 w-3"
+                                            strokeWidth={3}
+                                          />
+                                          {price}
+                                        </span>
+                                        <span className="text-sm text-muted-foreground font-light leading-none">
+                                          per serving
+                                        </span>
                                       </div>
                                     </div>
                                   )
                                 )}
                               </RadioGroup>
-                              <div className="flex gap-4 mt-6">
-                                <Button
-                                  variant="outline"
-                                  className="w-full"
-                                  onClick={() => setActiveItem(null)}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  className="w-full"
-                                  onClick={() => addItemWithPortion(activeItem)}
-                                >
-                                  Add
-                                </Button>
-                              </div>
+                            </div>
+                            <div className="flex gap-3 px-4 py-3">
+                              <Button
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => setActiveItem(null)}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                className="w-full bg-[#FF8080] text-white [box-shadow:var(--shadow-m)] hover:bg-[#FF8080]/80"
+                                onClick={() => addItemWithPortion(activeItem)}
+                              >
+                                Add
+                              </Button>
                             </div>
                           </DrawerContent>
                         )}
                     </Drawer>
                   </div>
-                  <p className="mt-1 font-medium">
-                    ₹ {item.item.price[item.selectedType]}
+                  <p className="mt-1 font-medium flex items-center  justify-end">
+                    <IndianRupee className="h-3 w-3" strokeWidth={3} />
+                    {item.item.price[item.selectedType]}
                   </p>
                 </div>
               </div>
@@ -930,7 +1010,7 @@ export default function OrderCard() {
 
             <div className="">
               <div
-                className=" flex items-center justify-between w-full p-3 border border-input bg-[#f0f0f0] rounded-xl cursor-pointer "
+                className=" flex items-center justify-between w-full p-3 border border-input  rounded-xl cursor-pointer [box-shadow:var(--shadow-s)]"
                 onClick={() => {
                   handleSpecialRequestsOpen();
                 }}
@@ -949,7 +1029,12 @@ export default function OrderCard() {
 
               <Drawer
                 open={isSpecialRequestsOpen}
-                onOpenChange={setIsSpecialRequestsOpen}
+                onOpenChange={(open) => {
+                  if (!open) {
+                    setIsSpecialRequestsOpen(false);
+                    setIsFinalLoading(false);
+                  }
+                }}
               >
                 <DrawerContent className="h-auto max-h-[80vh] p-0 bg-slate-50">
                   <DrawerDescription></DrawerDescription>
@@ -996,14 +1081,13 @@ export default function OrderCard() {
                     </div>
 
                     <DrawerFooter className="px-3 py-4  bg-background rounded-2xl">
-                      <div className="flex gap-3">
-                        <Button
-                          onClick={handleSpecialRequestsAdd}
-                          className="flex-1 bg-green-200 hover:bg-green-300 text-green-800"
-                        >
-                          ADD
-                        </Button>
-                      </div>
+                      <Button
+                        onClick={handleSpecialRequestsAdd}
+                        disabled={tempSpecialRequirements.length < 5}
+                        className="bg-[#FF8080] text-white [box-shadow:var(--shadow-m)] hover:bg-[#FF8080]/80"
+                      >
+                        ADD
+                      </Button>
                     </DrawerFooter>
                   </div>
                 </DrawerContent>
@@ -1041,10 +1125,10 @@ export default function OrderCard() {
           </CardContent>
         </Card>
 
-        <Card className="mt-4 rounded-3xl mb-4">
-          <CardHeader className="px-4 py-2">
+        <Card className="rounded-3xl   [box-shadow:var(--shadow-s)]">
+          <CardHeader className="p-4">
             <div className="flex items-center justify-between">
-              <h1 className="text-md font-bold">Payment Details</h1>
+              <h1 className="text-md font-medium">Payment Details</h1>
 
               <ChevronRight
                 className="self-right h-4 w-4 cursor-pointer"
@@ -1053,32 +1137,36 @@ export default function OrderCard() {
               />
             </div>
           </CardHeader>
-          <CardContent className="pt-2 pb-4 px-4">
+          <CardContent className="pt-2 pb-4 px-3">
             <div className="space-y-2">
               <div className="flex items-center justify-between w-full">
-                <p className="text-xs font-semibold">To Pay</p>
-                <p className="text-xs flex items-center ">
+                <p className="text-xs font-semibold text-muted-foreground">
+                  To Pay
+                </p>
+                <p className="text-xs flex items-center font-bold">
                   <IndianRupee className="h-3 w-3" /> {finalPrice}
                 </p>
                 {/* I can minus the discount amount here */}
               </div>
               <div className="flex items-center justify-between w-full">
-                <p className="text-xs font-semibold">
+                <p className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
                   Total savings with discount
+                  <CircleHelp className="h-4 w-4 cursor-pointer text-[#FF8080]" />
                 </p>
-                <p className="text-xs text-green-500 font-medium">
-                  -₹{discount || 0}
+                <p className="text-xs text-green-500 font-bold flex items-center ">
+                  -<IndianRupee className="h-3 w-3" />
+                  {discount || 0}
                 </p>
               </div>
               {coupon ? (
-                <div className="flex items-center justify-between w-full px-2 py-1 rounded-xl bg-pink-200/50 gap-2">
+                <div className="flex items-center justify-between w-full px-2 py-1 rounded-xl bg-pink-200/50 gap-2 [box-shadow:var(--shadow-s)]">
                   <div className="text-xs flex-1 flex flex-wrap items-center gap-1">
-                    You saved {""}
-                    <span className="text-green-500 text-md font-semibold flex items-center gap-1">
-                      <IndianRupee className="h-3 w-3" strokeWidth={3} />
+                    You saved
+                    <span className="text-green-500 text-md font-semibold flex items-center">
+                      <IndianRupee className="h-3 w-3" />
                       {discount}
-                    </span>{" "}
-                    with{" "}
+                    </span>
+                    with
                     <span className="text-blue-500 text-md font-semibold">
                       {coupon.code}
                     </span>
@@ -1096,7 +1184,7 @@ export default function OrderCard() {
                 </div>
               ) : (
                 <div
-                  className="text-xs text-muted-foreground"
+                  className="text-xs text-muted-foreground cursor-pointer"
                   onClick={() => setIsCouponDrawerOpen(true)}
                 >
                   Apply Coupon
@@ -1105,7 +1193,12 @@ export default function OrderCard() {
 
               <Drawer
                 open={isCouponDrawerOpen}
-                onOpenChange={setIsCouponDrawerOpen}
+                onOpenChange={(open) => {
+                  if (!open) {
+                    setIsCouponDrawerOpen(false);
+                    setIsFinalLoading(false);
+                  }
+                }}
               >
                 <DrawerContent className="rounded-t-2xl">
                   <DrawerDescription></DrawerDescription>
@@ -1127,8 +1220,15 @@ export default function OrderCard() {
                     />
                   </div>
                   <DrawerFooter className="px-3 py-4  bg-background rounded-2xl">
-                    <Button className="flex-1" onClick={handleCouponApply}>
+                    <Button
+                      className="flex-1 bg-[#FF8080] text-white [box-shadow:var(--shadow-m)] hover:bg-[#FF8080]/80"
+                      onClick={handleCouponApply}
+                      disabled={isCouponLoading || couponInput.length < 4}
+                    >
                       Apply
+                      {isCouponLoading && (
+                        <Icons.spinner className="h-4 w-4 animate-spin" />
+                      )}
                     </Button>
                   </DrawerFooter>
                 </DrawerContent>
@@ -1136,23 +1236,29 @@ export default function OrderCard() {
 
               <Drawer
                 open={isPaymentDetailsOpen}
-                onOpenChange={setIsPaymentDetailsOpen}
+                onOpenChange={(open) => {
+                  if (!open) {
+                    setIsPaymentDetailsOpen(false);
+                    setIsFinalLoading(false);
+                  }
+                }}
               >
                 <DrawerContent className="rounded-t-2xl bg-[#f0f0f0]">
                   <DrawerDescription></DrawerDescription>
-                  <DrawerHeader className="text-left pb-2 pt-1">
-                    <DrawerTitle className="text-sm font-semibold">
+                  <DrawerHeader className="text-left pb-0 pt-1">
+                    <DrawerTitle className="text-lg font-semibold">
                       Payment Details
                     </DrawerTitle>
                   </DrawerHeader>
 
-                  <div className="mx-3 px-4 pb-4 py-3 space-y-4 bg-white rounded-2xl">
+                  <div className="mx-3 my-1 px-4 pb-4 py-3 space-y-4 bg-white rounded-2xl [box-shadow:var(--shadow-s)]">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-light">
+                      <span className="text-xs  text-muted-foreground">
                         Item amount({ordereditems.length})
                       </span>
-                      <span className="text-xs font-semibold">
-                        ₹ {calculateTotal(ordereditems)}
+                      <span className="text-xs font-bold flex items-center ">
+                        <IndianRupee className="h-3 w-3" />
+                        {calculateTotal(ordereditems)}
                       </span>
                     </div>
 
@@ -1161,14 +1267,15 @@ export default function OrderCard() {
                         <span className="text-xs text-green-600">
                           Savings with {coupon.code}
                         </span>
-                        <span className="text-xs text-green-600">
-                          - ₹{discount}
+                        <span className="text-xs text-green-600 flex items-center font-bold">
+                          - <IndianRupee className="h-3 w-3" />
+                          {discount}
                         </span>
                       </div>
                     )}
 
                     {coupon && (
-                      <div className="flex justify-between items-center bg-pink-50 p-2 rounded-lg">
+                      <div className="flex justify-between items-center text-white bg-[#FF8080] p-2 rounded-lg [box-shadow:var(--shadow-s)]">
                         <span className="text-xs">{coupon.code} Applied</span>
                         <Trash2
                           className="h-3 w-3 cursor-pointer"
@@ -1176,25 +1283,31 @@ export default function OrderCard() {
                             setCoupon(null);
                             setDiscount(0);
                           }}
+                          strokeWidth={3}
                         />
                       </div>
                     )}
 
                     <div className="flex justify-between items-center font-medium">
-                      <span className="text-xs">Sub Total</span>
-                      <span className="text-xs">
-                        ₹{calculateTotal(ordereditems) - (discount || 0)}
+                      <span className="text-xs text-muted-foreground">
+                        Sub Total
+                      </span>
+                      <span className="text-xs font-bold flex items-center ">
+                        <IndianRupee className="h-3 w-3" />
+                        {calculateTotal(ordereditems) - (discount || 0)}
                       </span>
                     </div>
                     <Popover>
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-1">
-                          <span className="text-xs">Taxes and charges</span>
+                          <span className="text-xs text-muted-foreground">
+                            Taxes and charges
+                          </span>
                           <PopoverTrigger>
                             <Info className="h-4 w-4 text-muted-foreground" />
                           </PopoverTrigger>
                         </div>
-                        <span className="text-sm flex items-center gap-1">
+                        <span className="text-sm font-bold flex items-center ">
                           <IndianRupee className="h-3 w-3" />
                           {user?.tax
                             ? calculateTax(
@@ -1215,7 +1328,7 @@ export default function OrderCard() {
                         <div className="px-6 py-4 space-y-2">
                           <div className="flex items-center justify-between">
                             <span className="text-xs">Taxes</span>
-                            <span className="text-xs flex items-center gap-1">
+                            <span className="text-xs flex items-center ">
                               <IndianRupee
                                 className="h-3 w-3"
                                 strokeWidth={3}
@@ -1242,7 +1355,10 @@ export default function OrderCard() {
 
                     <div className="flex justify-between items-center font-semibold text-xs">
                       <span>To Pay</span>
-                      <span>₹{finalPrice}</span>
+                      <span className="font-bold flex items-center gap-1 text-sm">
+                        <IndianRupee className="h-3 w-3" />
+                        {finalPrice}
+                      </span>
                     </div>
                   </div>
                 </DrawerContent>
@@ -1255,7 +1371,7 @@ export default function OrderCard() {
           <Card className=" rounded-3xl mb-4">
             <CardHeader className="px-4 pt-2 pb-0">
               <div className="flex items-center justify-between">
-                <h1 className="text-md font-bold">Contact Details</h1>
+                <h1 className="text-md font-medium">Contact Details</h1>
 
                 <Button
                   variant="ghost"
@@ -1281,11 +1397,11 @@ export default function OrderCard() {
           ""
         )}
 
-        <Card className=" rounded-3xl mb-[200px]">
-          <CardHeader className="px-4 pt-2 pb-0">
-            <h1 className="text-md font-bold">Cancellation Policy</h1>
+        <Card className=" rounded-3xl  [box-shadow:var(--shadow-s)] ">
+          <CardHeader className="px-4 pt-4 pb-0">
+            <h1 className="text-md font-medium">Cancellation Policy</h1>
           </CardHeader>
-          <CardContent className=" pb-2 px-4 py-2">
+          <CardContent className="px-4 py-2">
             <p className="text-xs text-muted-foreground  leading-none">
               {/* {user?.name}, {user?.phone} */}
               Cancellation leads to food wastage. A 100% fee will be charged if
@@ -1297,12 +1413,17 @@ export default function OrderCard() {
 
         <Drawer
           open={contactDetailsDrawerOpen}
-          onOpenChange={setContactDetailsDrawerOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              setContactDetailsDrawerOpen(false);
+              setIsFinalLoading(false);
+            }
+          }}
         >
           <DrawerContent className="rounded-t-2xl">
             <DrawerDescription></DrawerDescription>
             <DrawerHeader className="text-left">
-              <DrawerTitle className="text-sm font-semibold">
+              <DrawerTitle className="text-left text-md font-medium">
                 Contact Details
               </DrawerTitle>
             </DrawerHeader>
@@ -1328,9 +1449,16 @@ export default function OrderCard() {
                 className="rounded-lg mb-2"
               />
             </div>
-            <DrawerFooter className="px-3 py-4  bg-background rounded-2xl">
-              <Button className="flex-1" onClick={handleContactDetailsSave}>
+            <DrawerFooter className="px-3 py-4   rounded-2xl">
+              <Button
+                className="flex-1 bg-[#FF8080] text-white [box-shadow:var(--shadow-m)] hover:bg-[#FF8080]/80"
+                onClick={handleContactDetailsSave}
+                disabled={isLoading}
+              >
                 Save
+                {isLoading && (
+                  <Icons.spinner className="ml-2 h-4 w-4 animate-spin" />
+                )}
               </Button>
             </DrawerFooter>
           </DrawerContent>
@@ -1350,13 +1478,13 @@ export default function OrderCard() {
               {selectedToggle === "Delivery" && (
                 <Button
                   variant="link"
-                  className="p-0 h-0 text-xs  cursor-pointer text-purple-500 "
+                  className="p-0 h-0 text-xs font-bold cursor-pointer text-purple-500 "
                   onClick={() => {
                     setSelectedAddress(contactDetails.type);
                     setAddressDrawerOpen(true);
                   }}
                 >
-                  change
+                  Change
                 </Button>
               )}
             </div>
@@ -1386,11 +1514,13 @@ export default function OrderCard() {
                 value="Delivery"
                 aria-label="Toggle delivery"
                 className={`p-6 flex flex-col items-center gap-0.5 rounded-lg  ${
-                  selectedToggle === "Delivery" ? "text-white" : "text-gray-600"
+                  selectedToggle === "Delivery"
+                    ? "text-white [box-shadow:var(--shadow-m)]"
+                    : "text-black [box-shadow:var(--shadow-inset)]"
                 }`}
                 style={{
                   backgroundColor:
-                    selectedToggle === "Delivery" ? "#cdb4f9" : "transparent",
+                    selectedToggle === "Delivery" ? "#FF8080" : "transparent",
                   color: selectedToggle === "Delivery" ? "white" : "black",
                 }}
               >
@@ -1410,10 +1540,14 @@ export default function OrderCard() {
               <ToggleGroupItem
                 value="Takeaway"
                 aria-label="Toggle takeaway"
-                className={`p-6 flex flex-col items-center gap-0.5 rounded-lg `}
+                className={`p-6 flex flex-col items-center gap-0.5 rounded-lg ${
+                  selectedToggle === "Takeaway"
+                    ? "text-white [box-shadow:var(--shadow-m)]"
+                    : "text-black [box-shadow:var(--shadow-inset)]"
+                }`}
                 style={{
                   backgroundColor:
-                    selectedToggle === "Takeaway" ? "#cdb4f9" : "transparent",
+                    selectedToggle === "Takeaway" ? "#FF8080" : "transparent",
                   color: selectedToggle === "Takeaway" ? "white" : "black",
                 }}
               >
@@ -1432,44 +1566,39 @@ export default function OrderCard() {
             </ToggleGroup>
 
             <Button
-              className="w-full  font-semibold py-7 rounded-xl"
+              className="w-full flex items-center  font-bold py-7 rounded-xl bg-[#FF8080] text-white [box-shadow:var(--shadow-m)] hover:bg-[#FF8080]/80"
               onClick={() => handlePlaceOrder()}
+              disabled={isFinalLoading}
             >
               Pay
-              {user?.tax?.restaurant ? (
-                <>
-                  <span className="flex items-center">
-                    <IndianRupee className="h-2 w-2" strokeWidth={3} />
-                    {finalPrice}
-                  </span>
-                  {isLoading && (
-                    <Icons.spinner className="h-4 w-4 animate-spin" />
-                  )}
-                </>
-              ) : (
-                <>
-                  <span className="flex items-center">
-                    <IndianRupee className="h-2 w-2" strokeWidth={3} />
-                    {finalPrice}
-                  </span>
-                  {isLoading && (
-                    <Icons.spinner className="h-4 w-4 animate-spin" />
-                  )}
-                </>
+              <span className="flex items-center ">
+                <IndianRupee className="h-2 w-2" strokeWidth={3} />
+                {finalPrice}
+              </span>
+              {isFinalLoading && (
+                <Icons.spinner className="ml-2 h-4 w-4 animate-spin" />
               )}
             </Button>
           </div>
         </div>
       </div>
-      <Drawer open={addressDrawerOpen} onOpenChange={setAddressDrawerOpen}>
+      <Drawer
+        open={addressDrawerOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAddressDrawerOpen(false);
+            setIsFinalLoading(false);
+          }
+        }}
+      >
         <DrawerDescription></DrawerDescription>
-        <DrawerContent>
+        <DrawerContent className="rounded-t-3xl">
           <DrawerHeader>
-            <DrawerTitle className="text-left text-sm font-semibold">
+            <DrawerTitle className="text-left text-md font-medium">
               Select delivery address
             </DrawerTitle>
           </DrawerHeader>
-          <div className="px-4">
+          <div className="">
             <RadioGroup
               value={selectedAddress}
               onValueChange={(value) => {
@@ -1481,11 +1610,18 @@ export default function OrderCard() {
                   handleAddressSelect(address);
                 }
               }}
-              className="space-y-2"
+              className="gap-0"
             >
               {user?.address?.length > 0 &&
                 user?.address.map((address: any, index: number) => (
-                  <div className="py-2" key={index}>
+                  <div
+                    className={`p-4 rounded-lg  [box-shadow:var(--shadow-inset)] ${
+                      selectedAddress === address.type
+                        ? "[box-shadow:var(--shadow-m)] bg-[#FF8080] text-white "
+                        : ""
+                    } `}
+                    key={index}
+                  >
                     <Popover>
                       <div
                         className="w-full flex items-center
@@ -1495,10 +1631,14 @@ export default function OrderCard() {
                           <RadioGroupItem
                             value={address.type}
                             id={address.type}
-                            className=" text-indigo-500 border-indigo-500 [&_svg]:fill-indigo-500 self-start"
+                            className={`align-center ${
+                              selectedAddress === address.type
+                                ? "text-white border-white [&_svg]:fill-white"
+                                : "text-black"
+                            }`}
                           />
 
-                          <div className="flex flex-col">
+                          <div className="flex flex-col ">
                             <span className="text-sm font-semibold px-1">
                               {address.type}
                             </span>
@@ -1562,19 +1702,49 @@ export default function OrderCard() {
               disabled={user?.address?.length === 3}
             >
               <Plus className="h-4 w-4" strokeWidth={3} />
-              <span className="text-xs ">Add a new address</span>
+              <span className="text-md ">Add a new address</span>
             </Button>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
 
-      <Drawer open={phoneDrawerOpen} onOpenChange={setPhoneDrawerOpen}>
+      <Drawer
+        open={phoneDrawerOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPhoneDrawerOpen(false);
+            setIsFinalLoading(false);
+          }
+        }}
+      >
         <DrawerContent className="rounded-t-3xl">
           <DrawerDescription></DrawerDescription>
 
           <DrawerHeader>
             <DrawerTitle>
-              {stage === "phone" ? "Enter your phone number" : "Enter  OTP"}
+              {stage === "phone" ? (
+                "Enter your phone number"
+              ) : (
+                <div className="flex flex-col gap-1 ">
+                  <span className="text-md font-bold">Verify with OTP</span>
+                  <span className="text-xs text-muted-foreground tracking-wide">
+                    Sent via SMS to {phoneNumber}
+                  </span>
+                  {user?.tag === "restaurant" && (
+                    <span
+                      className="text-xs text-[#FF8080] tracking-wide "
+                      onClick={() => {
+                        setStage("phone");
+                        setPhoneNumber("");
+                        stopCountdown();
+                        setOtp("");
+                      }}
+                    >
+                      Change number?
+                    </span>
+                  )}
+                </div>
+              )}
             </DrawerTitle>
           </DrawerHeader>
 
@@ -1584,8 +1754,21 @@ export default function OrderCard() {
                 <Input
                   placeholder="Enter your phone number"
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  onChange={(e) => {
+                    if (/^\d{0,10}$/.test(e.target.value)) {
+                      setPhoneNumber(e.target.value);
+                    }
+                  }}
                   className="rounded-lg"
+                  maxLength={10}
+                  minLength={10}
+                  pattern="[0-9]*"
+                  inputMode="numeric"
+                  type="tel"
+                  required
+                  aria-invalid={false}
+                  aria-describedby="phone-error"
+                  autoFocus
                 />
               </>
             )}
@@ -1620,8 +1803,12 @@ export default function OrderCard() {
                       variant="ghost"
                       className="h-6 text-sm text-blue-500 py-0"
                       onClick={handleResendOtp}
+                      disabled={isLoading}
                     >
-                      Resend OTP
+                      {isLoading ? "Resending OTP..." : "Resend OTP"}
+                      {isLoading && (
+                        <Icons.spinner className="ml-2 h-4 w-4 animate-spin" />
+                      )}
                     </Button>
                   )}
                 </div>
@@ -1631,8 +1818,13 @@ export default function OrderCard() {
 
           <DrawerFooter className="px-3 py-2 bg-background rounded-2xl ">
             <Button
-              className="flex-1 py-3 rounded-lg"
+              className="flex-1 py-3  bg-[#FF8080] text-white [box-shadow:var(--shadow-m)] hover:bg-[#FF8080]/80"
               onClick={stage === "phone" ? handlePhoneSubmit : handleOtpSubmit}
+              disabled={
+                isLoading ||
+                phoneNumber.length !== 10 ||
+                (stage === "otp" && otp.length !== 6)
+              }
             >
               {stage === "phone" ? "Continue" : "Verify"}
               {isLoading && (

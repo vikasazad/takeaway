@@ -48,6 +48,7 @@ export const verifyJWTToken = async (token: string) => {
     return decoded;
   } catch (error) {
     console.error("Error verifying JWT token:", error);
+    window.location.reload();
     throw error;
   }
 };

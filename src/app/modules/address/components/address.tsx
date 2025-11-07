@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, MapPin, Navigation, CircleX } from "lucide-react";
+import { ChevronLeft, MapPin, CircleX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { addUser } from "@/lib/features/addToOrderSlice";
 import { setEditAddress } from "@/lib/features/editAddressSlice";
 import { saveCustomerAddress } from "../utils/addressApi";
+import { Icons } from "@/components/ui/icons";
 
 declare global {
   interface Window {
@@ -55,6 +56,7 @@ export default function Address() {
   const [marker, setMarker] = useState<any>(null);
   const [geocoder, setGeocoder] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFinalLoading, setIsFinalLoading] = useState(false);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchSuggestions, setSearchSuggestions] = useState<any[]>([]);
@@ -238,6 +240,7 @@ export default function Address() {
       const mapOptions = {
         center: { lat: selectedAddress.lat, lng: selectedAddress.lng },
         zoom: 15,
+        disableDefaultUI: true,
         mapTypeControl: false,
         fullscreenControl: false,
         streetViewControl: false,
@@ -279,7 +282,7 @@ export default function Address() {
           justify-content: center;
           font-size: 16px;
           color: white;
-        ">🏪</div>
+        ">🏠</div>
       `;
 
       new window.google.maps.marker.AdvancedMarkerElement({
@@ -725,7 +728,9 @@ export default function Address() {
   };
 
   const handleSaveAddress = async () => {
+    setIsFinalLoading(true);
     if (!validateFields()) {
+      setIsFinalLoading(false);
       return;
     }
 
@@ -733,6 +738,7 @@ export default function Address() {
       toast.error(
         `This location is outside our ${DELIVERY_RADIUS_KM} km delivery radius`
       );
+      setIsFinalLoading(false);
       return;
     }
 
@@ -834,8 +840,11 @@ export default function Address() {
           );
         }
       }
+      setIsFinalLoading(false);
+      setIsAddressDrawerOpen(false);
     } else {
       toast.error("Address not saved");
+      setIsFinalLoading(false);
     }
 
     console.log("Complete address details:", fullAddress);
@@ -875,7 +884,7 @@ export default function Address() {
 
       <div className="min-h-screen ">
         {/* Header */}
-        <div className="flex items-center justify-between  border-b border-[#f0f0f0] rounded-bl-3xl p-2 shadow-lg">
+        <div className="flex items-center justify-between  border-b border-[#f0f0f0] rounded-bl-3xl p-2 [box-shadow:var(--shadow-s)]">
           <div className="flex items-center">
             <div
               className="ml-2 w-7 h-8 border-2 border-muted rounded-lg shadow-lg flex items-center justify-center"
@@ -891,7 +900,7 @@ export default function Address() {
                 : "Add address"}
             </h1>
           </div>
-          <Button
+          {/* <Button
             variant="ghost"
             size="icon"
             onClick={getCurrentLocation}
@@ -899,7 +908,7 @@ export default function Address() {
             className="mr-3 border-2 border-muted rounded-lg shadow-lg bg-blue-200"
           >
             <Navigation className="h-5 w-5" />
-          </Button>
+          </Button> */}
         </div>
         {/* <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center">
@@ -923,8 +932,8 @@ export default function Address() {
         </div> */}
 
         {/* Search Input */}
-        <div className="absolute top-[10%] left-4 right-4 z-10">
-          <div className="relative">
+        <div className="absolute top-[10%] left-4 right-4 z-10 ">
+          <div className="relative ">
             <Image
               src="/images/googlemap.svg"
               alt="search"
@@ -937,13 +946,13 @@ export default function Address() {
               placeholder="Search for area, street name..."
               value={searchQuery}
               onChange={handleSearchChange}
-              className="h-[2.5rem] pl-10 bg-white/80 backdrop-blur-md border-none shadow-xl rounded-full text-gray-700 placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500/50 focus:bg-white/90 transition-all duration-200"
+              className="h-[2.5rem] pl-10 bg-white/80 backdrop-blur-md border-none [box-shadow:var(--shadow-m)] rounded-full text-gray-700 placeholder:text-gray-500  transition-all duration-200  !ring-[#FF8080]"
               onFocus={() => setShowSuggestions(true)}
             />
 
             {/* Search Suggestions */}
             {showSuggestions && searchSuggestions.length > 0 && (
-              <div className="absolute top-full left-0 right-0 bg-white/95 backdrop-blur-md border-none rounded-2xl shadow-xl z-20 max-h-60 overflow-y-auto mt-2">
+              <div className="absolute top-full left-0 right-0 bg-white/95 backdrop-blur-md border-none rounded-2xl [box-shadow:var(--shadow-m)] z-20 max-h-60 overflow-y-auto mt-2">
                 {searchSuggestions.map((suggestion) => (
                   <div
                     key={suggestion.place_id}
@@ -1017,7 +1026,7 @@ export default function Address() {
         {/* Save Button */}
         <div className="relative">
           <div className="absolute bottom-[8rem] left-4 right-4 ">
-            <Card className=" bg-white shadow-lg">
+            <Card className=" bg-white [box-shadow:var(--shadow-s)]">
               <CardContent className="p-4">
                 <div className="flex items-start space-x-3">
                   {isWithinDeliveryRadius ? (
@@ -1048,14 +1057,28 @@ export default function Address() {
                       </p>
                     )}
                   </div>
+                  {/* {hasStarted && ( */}
+
+                  {/* )} */}
                 </div>
               </CardContent>
             </Card>
           </div>
           <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 rounded-t-2xl px-3">
+            <div className="absolute bottom-[5rem]  right-4 z-10  ">
+              <Button
+                size="icon"
+                variant="secondary"
+                className="rounded-full w-12 h-12 [box-shadow:var(--shadow-m)] bg-[#FF8080] hover:bg-[#FF8080]/80"
+                onClick={getCurrentLocation}
+                disabled={isLoading || !isMapLoaded}
+              >
+                <MapPin className="h-6 w-6 text-white" />
+              </Button>
+            </div>
             <Button
               onClick={() => setIsAddressDrawerOpen(true)}
-              className="w-full py-6 text-base font-medium rounded-2xl"
+              className="w-full py-6 text-base font-medium rounded-lg [box-shadow:var(--shadow-m)] bg-[#FF8080] text-white hover:bg-[#FF8080]/80"
               disabled={!isWithinDeliveryRadius}
             >
               {isWithinDeliveryRadius
@@ -1071,7 +1094,7 @@ export default function Address() {
           <DrawerContent className="rounded-t-3xl p-0">
             <DrawerDescription></DrawerDescription>
             <DrawerHeader className="px-4 py-0">
-              <DrawerTitle className=" py-2 text-left text-sm font-medium ">
+              <DrawerTitle className=" py-2 text-left text-base font-medium ">
                 {selectedAddress.formatted.split(",").splice(0, 2).join(",")}
               </DrawerTitle>
             </DrawerHeader>
@@ -1194,6 +1217,11 @@ export default function Address() {
                             addressDetails.type === type ? "default" : "outline"
                           }
                           size="sm"
+                          className={`${
+                            addressDetails.type === type
+                              ? "[box-shadow:var(--shadow-s)] bg-[#FF8080] text-white hover:bg-[#FF8080]/80"
+                              : "bg-white text-black [box-shadow:var(--shadow-inset)]"
+                          }`}
                           disabled={isExistingAddress}
                           onClick={() =>
                             setAddressDetails({
@@ -1211,6 +1239,7 @@ export default function Address() {
 
                 <div className="flex items-center space-x-2 mt-4">
                   <Checkbox
+                    className="data-[state=checked]:bg-[#FF8080] data-[state=checked]:text-white data-[state=checked]:border-none"
                     id="defaultAddress"
                     checked={addressDetails.default}
                     onCheckedChange={(checked) => {
@@ -1231,15 +1260,18 @@ export default function Address() {
             </div>
             <DrawerFooter>
               <Button
-                className="w-full py-6 rounded-2xl"
+                className="w-full py-6 rounded-lg [box-shadow:var(--shadow-s)] bg-[#FF8080] text-white hover:bg-[#FF8080]/80"
                 onClick={handleSaveAddress}
-                disabled={!isFormValid()}
+                disabled={!isFormValid() || isFinalLoading}
               >
                 {user?.address?.some(
                   (addr: any) => addr.type === addressDetails.type
                 )
                   ? "Update Address and Proceed"
                   : "Save Address and Proceed"}
+                {isFinalLoading && (
+                  <Icons.spinner className="ml-2 h-4 w-4 animate-spin text-white" />
+                )}
               </Button>
             </DrawerFooter>
           </DrawerContent>

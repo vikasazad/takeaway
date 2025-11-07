@@ -2,15 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ChevronLeft,
-  Phone,
-  Bike,
-  CheckCircle,
-  AlertCircle,
-  Copy,
-  MapPin,
-} from "lucide-react";
+import { ChevronLeft, Phone, Bike, Copy, MapPin, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +16,12 @@ import {
   startDeliveryTracking,
   clearDelivery,
 } from "../../tracking/utils/deliveryLocationApi";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { Icons } from "@/components/ui/icons";
+import {
+  clearDeliveryRedux,
+  selectDeliveryById,
+} from "@/lib/features/deliverySlice";
 
 declare global {
   interface Window {
@@ -33,15 +30,28 @@ declare global {
   }
 }
 
-export default function DeliveryPage() {
+export default function Delivery() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const mapRef = useRef<HTMLDivElement>(null);
   const deliveryMarkerRef = useRef<any>(null);
   const customerMarkerRef = useRef<any>(null);
+  const [delivery, setDelivery] = useState<any>(null);
+  const deliveryId = localStorage.getItem("delivery-id");
 
   // Get delivery data from Redux
-  const delivery = useSelector((state: any) => state.delivery.delivery);
-  console.log("Delivery data from Redux:", delivery);
+  const deliveryData = useSelector((state) =>
+    deliveryId ? selectDeliveryById(state, deliveryId) : null
+  );
+
+  useEffect(() => {
+    console.log("deliveryData", deliveryData);
+    if (deliveryData) {
+      setDelivery(deliveryData);
+    }
+  }, [deliveryData]);
+  // const delivery = useSelector((state: any) => state.delivery.delivery);
+  // console.log("Delivery data from Redux:", delivery);
 
   // Restaurant coordinates from Redux
   const restaurantCoords = delivery?.restaurantCoords || {
@@ -67,12 +77,14 @@ export default function DeliveryPage() {
   const [directionsService, setDirectionsService] = useState<any>(null);
   const [estimatedTime, setEstimatedTime] = useState("--");
   const [distance, setDistance] = useState("--");
+  const [isLoading, setIsLoading] = useState(false);
   // const [isDelivered, setIsDelivered] = useState(false);
   const [isWatchingLocation, setIsWatchingLocation] = useState(false);
   const [watchId, setWatchId] = useState<number | null>(null);
   const [orderData, setOrderData] = useState<any>(null);
   const [isLoadingOrder, setIsLoadingOrder] = useState(true);
   const [isCameraLocked, setIsCameraLocked] = useState(true);
+  const [copied, setCopied] = useState<Record<string, boolean>>({});
   const animationFrame = useRef<number>();
 
   // Check if delivery data is available
@@ -460,7 +472,7 @@ export default function DeliveryPage() {
         justify-content: center;
         font-size: 16px;
         color: white;
-      ">🏪</div>
+      ">🏠</div>
     `;
 
     new window.google.maps.marker.AdvancedMarkerElement({
@@ -665,6 +677,7 @@ export default function DeliveryPage() {
   };
 
   const handleMarkDelivered = async () => {
+    setIsLoading(true);
     try {
       // Update status in Firestore
       const success = await updateDeliveryOrderStatus(
@@ -678,22 +691,29 @@ export default function DeliveryPage() {
         await clearDelivery(
           delivery?.customer?.phone,
           delivery?.orderId,
-          delivery?.customer?.address?.address
+          delivery?.address?.address
         );
+        console.log("Delivery cleared", delivery?.address);
+        dispatch(clearDeliveryRedux());
         if (watchId) {
           navigator.geolocation.clearWatch(watchId);
           setWatchId(null);
         }
         setIsWatchingLocation(false);
+        localStorage.removeItem("delivery-id");
+        localStorage.removeItem("tracking-id");
         router.push("/dashboard");
+        setIsLoading(false);
         // setIsDelivered(true);
         toast.success("Order marked as delivered!");
       } else {
         toast.error("Failed to mark order as delivered");
+        setIsLoading(false);
       }
     } catch (error) {
       console.error("Error marking as delivered:", error);
       toast.error("Failed to mark order as delivered");
+      setIsLoading(false);
     }
   };
 
@@ -724,25 +744,23 @@ export default function DeliveryPage() {
     );
   }
 
-  if (!isDeliveryAvailable) {
+  if (!isDeliveryAvailable && !deliveryId) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md mx-4">
           <CardContent className="p-6 text-center">
             <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 No delivery data available. Please start a delivery from the
                 delivery dashboard first.
               </AlertDescription>
             </Alert>
             <p className="text-sm text-gray-600 mb-4">
-              Delivery information needs to be set in Redux before accessing
-              this page.
+              Delivery information needs to be set before accessing this page.
             </p>
             <Button
               onClick={() => router.push("/dashboard")}
-              className="w-full"
+              className="w-full [box-shadow:var(--shadow-m)] bg-[#FF8080] hover:bg-[#FF8080]/80 text-white"
             >
               Go to Delivery Dashboard
             </Button>
@@ -776,6 +794,14 @@ export default function DeliveryPage() {
   //   );
   // }
 
+  const handleCopyWithTick = (key: string, value: string) => {
+    navigator.clipboard.writeText(value);
+    setCopied((prev) => ({ ...prev, [key]: true }));
+    setTimeout(() => {
+      setCopied((prev) => ({ ...prev, [key]: false }));
+    }, 1500);
+  };
+
   return (
     <>
       {/* Only load Google Maps script when delivery data is available */}
@@ -790,16 +816,16 @@ export default function DeliveryPage() {
 
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
-        <div className=" border-b border-[#f0f0f0] rounded-bl-3xl p-2 box-shadow-lg">
+        <div className=" border-b border-[#f0f0f0] rounded-bl-3xl p-2 [box-shadow:var(--shadow-s)]">
           <div className="flex items-center gap-2">
             <div
-              className="ml-2 w-7 h-8 border-2 border-muted rounded-lg box-shadow-lg flex items-center justify-center"
+              className="ml-2 w-7 h-8 border-2 border-muted rounded-lg [box-shadow:var(--shadow-m)] flex items-center justify-center"
               onClick={() => router.back()}
             >
               <ChevronLeft className="h-6 w-6 " strokeWidth={3} />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold">Delivery</span>
+              <span className="text-md font-bold">Delivery</span>
               <span className="text-xs text-muted-foreground">
                 Order #{orderData?.orderId}
               </span>
@@ -823,11 +849,11 @@ export default function DeliveryPage() {
 
             {/* Map Overlay Info */}
             <div className="absolute top-4 left-4 right-4">
-              <Card className="bg-white/90 backdrop-blur-sm">
+              <Card className="bg-white/90 backdrop-blur-sm [box-shadow:var(--shadow-s)]">
                 <CardContent className="p-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center [box-shadow:var(--shadow-m)]">
                         <Bike className="h-4 w-4 text-green-600" />
                       </div>
                       <div>
@@ -839,7 +865,7 @@ export default function DeliveryPage() {
                     </div>
                     <Badge
                       variant="secondary"
-                      className="bg-green-100 text-green-800"
+                      className="bg-green-100 text-green-800 [box-shadow:var(--shadow-m)]"
                     >
                       {isWatchingLocation ? "Tracking" : "Paused"}
                     </Badge>
@@ -853,7 +879,7 @@ export default function DeliveryPage() {
                 <Button
                   size="icon"
                   variant="secondary"
-                  className="rounded-full w-12 h-12 shadow-lg"
+                  className="rounded-full w-12 h-12 [box-shadow:var(--shadow-m)] bg-[#FF8080] hover:bg-[#FF8080]/80 text-white"
                   onClick={() => {
                     if (map && currentLocation) {
                       map.panTo(currentLocation);
@@ -874,62 +900,74 @@ export default function DeliveryPage() {
               <Button
                 onClick={handleCallCustomer}
                 variant="outline"
-                className="flex-1"
+                className="w-[50%] [box-shadow:var(--shadow-inset)] "
               >
                 <Phone className="h-4 w-4 mr-2" />
                 Call Customer
               </Button>
               <Button
                 onClick={handleMarkDelivered}
-                className="flex-1 bg-green-600 hover:bg-green-700"
+                disabled={isLoading}
+                className="w-[50%]  [box-shadow:var(--shadow-m)] bg-[#FF8080] hover:bg-[#FF8080]/80 text-white"
               >
-                <CheckCircle className="h-4 w-4 mr-2" />
+                {/* <CheckCircle className="h-4 w-4 mr-2" /> */}
                 Mark Delivered
+                {isLoading && (
+                  <Icons.spinner className="h-4 w-4 ml-2 animate-spin text-white" />
+                )}
               </Button>
             </div>
 
             {/* Customer Info Card */}
-            <Card className="hover:shadow-md transition-shadow">
+            <Card className="hover:shadow-md transition-shadow [box-shadow:var(--shadow-s)]">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <h3 className="font-semibold text-gray-900">
+                  <h3 className="text-lg font-bold text-gray-900">
                     {orderData?.customer?.name}
                   </h3>
-                  <Badge>{orderData?.status}</Badge>
+                  <Badge className="[box-shadow:var(--shadow-m)] bg-[#FF8080] text-white border-none">
+                    {orderData?.status}
+                  </Badge>
                 </div>
 
                 <div className="space-y-2 text-sm text-gray-600">
                   <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4" />
-                    {orderData?.customer?.phone}
-                    <Copy
-                      className="h-4 w-4"
-                      onClick={() => {
-                        navigator.clipboard.writeText(
-                          orderData?.customer?.phone
-                        );
-                      }}
-                    />
+                    <Phone className="h-4 w-4 text-[#FF8080] " />
+                    <span className="text-gray-600">
+                      {orderData?.customer?.phone}
+                    </span>
+                    {copied[`phone-${orderData?.customer?.phone}`] ? (
+                      <Check className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <Copy
+                        className="h-4 w-4 cursor-pointer text-[#FF8080]"
+                        onClick={() =>
+                          handleCopyWithTick(
+                            `phone-${orderData?.customer?.phone}`,
+                            orderData?.customer?.phone
+                          )
+                        }
+                      />
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
+                    <MapPin className="h-4 w-4 text-[#FF8080] " />
                     {orderData?.customer?.address?.address}
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500">
-                      Order ID: {orderData?.orderId}
-                    </span>
+                    <span className="text-md text-[#FF8080]">Order ID:</span>
+                    <span className="text-gray-600">{orderData?.orderId}</span>
                   </div>
                 </div>
 
-                <div className="mt-2">
-                  <p className="text-sm text-gray-500">
-                    Items:{" "}
+                <div className=" flex items-center gap-2">
+                  <span className="text-md text-[#FF8080]">Items:</span>
+                  <span className="text-gray-600">
                     {orderData?.orderedItems
                       ?.map((item: any) => `${item.name} (${item.count})`)
                       .join(", ")}
-                  </p>
+                  </span>
                 </div>
 
                 {/* <div className="flex  items-center justify-between gap-3 mt-4">

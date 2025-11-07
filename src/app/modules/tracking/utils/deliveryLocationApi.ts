@@ -279,13 +279,24 @@ export const clearDelivery = async (
   const deliveryData = await getDoc(deliveryRef);
   if (deliveryData.exists()) {
     const data = deliveryData.data()?.delivery[customerPhone][orderId];
+    const length = Object.keys(
+      deliveryData.data()?.delivery[customerPhone]
+    ).length;
+
     await updateDoc(deliveryRef, {
       [`customers.${customerPhone}.orders`]: arrayUnion(data),
     });
+
+    if (length === 1) {
+      await updateDoc(deliveryRef, {
+        [`delivery.${customerPhone}`]: deleteField(),
+      });
+    } else {
+      await updateDoc(deliveryRef, {
+        [`delivery.${customerPhone}.${orderId}`]: deleteField(),
+      });
+    }
   }
-  await updateDoc(deliveryRef, {
-    [`delivery.${customerPhone}`]: deleteField(),
-  });
 
   await sendWhatsAppMessageDeliveryCompleted(`+91${customerPhone}`, [
     orderId,

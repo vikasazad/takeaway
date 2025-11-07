@@ -5,7 +5,6 @@ import {
   Bike,
   Clock,
   IndianRupee,
-  LogOut,
   MapPin,
   Package,
   Phone,
@@ -43,7 +42,6 @@ import {
   isUserLoggedIn,
   getCurrentPhone,
 } from "@/lib/auth/jwtService";
-import Script from "next/script";
 import {
   Drawer,
   DrawerContent,
@@ -78,7 +76,7 @@ import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
-import { setDelivery } from "@/lib/features/deliverySlice";
+import { clearDeliveryRedux, setDelivery } from "@/lib/features/deliverySlice";
 const useCountdown = (initialCount: number) => {
   const [count, setCount] = useState(0);
 
@@ -102,11 +100,13 @@ export default function Header({ data }: { data: any }) {
     (state: RootState) => state.addToOrderData
   );
   console.log("HERETHEDATA", orders);
-
+  const delivery: any = useSelector(
+    (state: RootState) => state.delivery?.delivery
+  );
+  console.log("delivery in header:", delivery);
   // JWT Token Configuration
 
   const [expanded, setExpanded] = useState(false);
-  const [loadScript, setLoadScript] = useState(false);
   const [open, setOpen] = useState(false);
   const [phoneDrawerOpen, setPhoneDrawerOpen] = useState(false);
   const [fNumber, setFNumber] = useState("");
@@ -181,7 +181,7 @@ export default function Header({ data }: { data: any }) {
         (result: any) => {
           if (result) {
             const orders: any[] = [];
-            console.log("result", result);
+            // console.log("result", result);
             Object.entries(result?.current).forEach(([, value]) => {
               orders.push(value);
             });
@@ -250,7 +250,8 @@ export default function Header({ data }: { data: any }) {
       // Stop the countdown when OTP is successfully verified
       stopCountdown();
 
-      handleAfterLogin();
+      const res = await handleAfterLogin();
+      if (!res) toast.error("Something went wrong. Please try again.");
       setUserLogin(true);
       setPhoneDrawerOpen(false);
       setStage("phone");
@@ -258,7 +259,7 @@ export default function Header({ data }: { data: any }) {
       setPhoneNumber("");
       setFNumber("");
       setIsLoading(false);
-      setLoadScript(true);
+      // setLoadScript(true);
       // here to be save user data
       // Use replace to prevent back navigation to login
       // document.body.focus();
@@ -303,7 +304,7 @@ export default function Header({ data }: { data: any }) {
       );
       if (!register) {
         toast.error("Something went wrong");
-        return;
+        return false;
       }
     }
     // setUserLogin(true);
@@ -323,11 +324,11 @@ export default function Header({ data }: { data: any }) {
       // Set up JWT after successful login
       await setupJWTAfterLogin(fNumber);
       console.log("User logged in and JWT token created");
+      return true;
     } catch (error) {
       console.error("Error setting up JWT after login:", error);
+      return false;
     }
-
-    console.log("user", user);
   };
 
   const handleLogout = () => {
@@ -339,6 +340,7 @@ export default function Header({ data }: { data: any }) {
 
     // Clear user data from Redux store
     dispatch(clearLogout());
+    dispatch(clearDeliveryRedux());
 
     // Close the sheet
     setOpen(false);
@@ -351,7 +353,7 @@ export default function Header({ data }: { data: any }) {
 
     // Show success message
     toast.success("Logged out successfully");
-
+    window.location.reload();
     console.log("User logged out successfully");
   };
 
@@ -360,12 +362,6 @@ export default function Header({ data }: { data: any }) {
   return (
     <>
       <div id="recaptcha-container" />
-      {loadScript && (
-        <Script
-          type="text/javascript"
-          src="https://checkout.razorpay.com/v1/checkout.js"
-        />
-      )}
 
       <header className="mx-auto max-w-2xl px-2 py-2">
         <div className="flex items-center justify-end">
@@ -373,36 +369,45 @@ export default function Header({ data }: { data: any }) {
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger
                 asChild
-                className="w-9 h-9  rounded-full p-2 border-2  border-green-500"
+                className="w-9 h-9  rounded-full p-2 border-2   [box-shadow:var(--shadow-m)]"
               >
-                <User />
+                <User className="bg-[#FF8080] text-white " />
               </SheetTrigger>
 
               <SheetContent
                 side="right"
-                className="w-[330px] sm:w-[330px] flex flex-col overflow-y-auto  "
+                className="w-[330px] sm:w-[330px] flex flex-col overflow-y-auto  py-6 px-2 gap-1"
               >
-                <SheetHeader className="space-y-0 pt-5">
-                  <SheetTitle className="text-xl">
-                    <div className="flex items-center justify-between py-2">
+                <SheetHeader className="space-y-0 pt-5 ">
+                  <SheetTitle className="text-xl py-2 px-3 bg-[#FF8080] rounded-lg text-white [box-shadow:var(--shadow-s)]">
+                    <div className="flex items-center justify-between   ">
                       <div className="flex items-center space-x-2">
-                        <Avatar className="h-10 w-10 cursor-pointer">
+                        <Avatar className="h-8 w-8 cursor-pointer [box-shadow:var(--shadow-m)]">
                           <AvatarImage alt="Restaurant logo" src={data.logo} />
                         </Avatar>
-                        <h1 className="text-lg font-semibold">
+                        <h1 className="text-lg font-semibold text-left">
                           {data.name || "Restaurant Name"}
                         </h1>
                       </div>
-                      <LogOut className="h-5 w-5" onClick={handleLogout} />
+                      <Button
+                        className="text-white bg-transparent [box-shadow:var(--shadow-m)] hover:bg-transparent hover:text-white"
+                        onClick={handleLogout}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Logout
+                      </Button>
                     </div>
                   </SheetTitle>
                 </SheetHeader>
                 <SheetDescription></SheetDescription>
                 <div>
                   {orders.length > 0 && (
-                    <span className="text-sm font-semibold">Orders</span>
+                    <span className="text-lg font-bold px-4 text-muted-foreground">
+                      Orders
+                    </span>
                   )}
-                  <div className="space-y-2 py-2">
+                  <div className="space-y-2 py-2 px-4">
                     {orders.map((order: any, index: number) => (
                       <div key={index}>
                         <Accordion type="single" collapsible>
@@ -413,8 +418,8 @@ export default function Header({ data }: { data: any }) {
                                   <div
                                     className={
                                       !order.timeOfFullfilment
-                                        ? "w-12 h-12 bg-gradient-to-br from-blue-300 to-blue-500 rounded-xl flex items-center justify-center shadow-md"
-                                        : "w-12 h-12 bg-gradient-to-br from-green-300 to-green-500 rounded-xl flex items-center justify-center shadow-md"
+                                        ? "w-12 h-12 bg-gradient-to-br from-[#FF8080]/55 to-[#FF8080] rounded-xl flex items-center justify-center [box-shadow:var(--shadow-m)]"
+                                        : "w-12 h-12 bg-gradient-to-br from-green-300 to-green-500 rounded-xl flex items-center justify-center [box-shadow:var(--shadow-m)]"
                                     }
                                   >
                                     {order.location === "Delivery" ? (
@@ -432,11 +437,16 @@ export default function Header({ data }: { data: any }) {
                                   </div>
                                   <div>
                                     <div className="flex items-center gap-2 mb-1">
-                                      <span className="font-mono text-sm font-bold text-gray-800">
+                                      <span className=" text-base font-bold text-gray-800">
                                         {order.orderId}
                                       </span>
                                       {!order.timeOfFullfilment && (
-                                        <Badge variant="default">active</Badge>
+                                        <Badge
+                                          variant="default"
+                                          className="bg-[#FF8080] text-white [box-shadow:var(--shadow-m)] hover:bg-[#FF8080]/80 border-none"
+                                        >
+                                          active
+                                        </Badge>
                                       )}
                                     </div>
                                     <div className="flex items-center gap-4 text-sm text-gray-600">
@@ -462,12 +472,23 @@ export default function Header({ data }: { data: any }) {
                             <AccordionContent>
                               {order.location === "Delivery" &&
                                 !order.timeOfFullfilment && (
-                                  <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg p-1 mb-4">
+                                  <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg p-1 mb-4 [box-shadow:var(--shadow-s)]">
                                     <Button
                                       variant="ghost"
                                       className="w-full text-orange-700 hover:text-orange-800 hover:bg-orange-200 font-medium"
                                       onClick={() => {
-                                        dispatch(setDelivery(order));
+                                        // console.log(order);
+                                        dispatch(
+                                          setDelivery({
+                                            order,
+                                            from: "tracking",
+                                          })
+                                        );
+                                        localStorage.setItem(
+                                          "tracking-id",
+                                          order.orderId
+                                        );
+                                        // dispatch(clearDeliveryRedux());
                                         router.push("/tracking");
                                       }}
                                     >
@@ -477,10 +498,10 @@ export default function Header({ data }: { data: any }) {
                                 )}
                               {order?.items?.map((itm: any, index: number) => (
                                 <div className="space-y-4 mb-4" key={index}>
-                                  <div className="bg-gray-50 rounded-lg p-3">
-                                    <div className="flex justify-between items-center">
+                                  <div className=" rounded-lg p-3 [box-shadow:var(--shadow-inset)]">
+                                    <div className="flex justify-between items-center ">
                                       <div>
-                                        <p className="font-semibold text-gray-800">
+                                        <p className="font-bold text-gray-800 text-base ">
                                           {itm.name}
                                         </p>
                                         <p className="text-sm text-gray-600">
@@ -496,27 +517,32 @@ export default function Header({ data }: { data: any }) {
                                 </div>
                               ))}
 
-                              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                              <div className=" rounded-lg p-4 mb-4 [box-shadow:var(--shadow-m)]">
                                 <div className="space-y-2 text-sm">
                                   <div className="flex justify-between">
-                                    <span>
+                                    <span className="text-xs font-semibold text-muted-foreground">
                                       Subtotal ({order?.items?.length} items)
                                     </span>
-                                    <span className="flex items-center gap-1">
+                                    <span className="flex items-center gap-1 text-xs font-bold">
                                       <IndianRupee className="h-3 w-3" />
                                       {order?.payment?.subtotal}
                                     </span>
                                   </div>
                                   <div className="flex justify-between text-green-600">
-                                    <span>Discount</span>
-                                    <span className="flex items-center gap-1">
+                                    <span className="text-xs font-semibold text-muted-foreground">
+                                      Discount
+                                    </span>
+                                    <span className="flex items-center gap-1 text-xs font-bold">
                                       <IndianRupee className="h-3 w-3" />
-                                      {order?.payment?.discount?.amount}
+                                      {order?.payment?.discount?.amount || 0}
                                     </span>
                                   </div>
                                   <div className="flex justify-between">
-                                    <span>Taxes (18%)</span>
-                                    <span className="flex items-center gap-1">
+                                    <span className="text-xs font-semibold text-muted-foreground">
+                                      Taxes (
+                                      {order?.payment?.gst?.gstPercentage}%)
+                                    </span>
+                                    <span className="flex items-center gap-1 text-xs font-bold">
                                       <IndianRupee className="h-3 w-3" />
                                       {order?.payment?.gst?.gstAmount}
                                     </span>
@@ -537,15 +563,15 @@ export default function Header({ data }: { data: any }) {
                                 </div>
                               </div>
 
-                              <div className="space-y-3 text-sm bg-blue-50 rounded-lg p-4">
-                                <h4 className="font-semibold text-gray-800 mb-2">
+                              <div className="space-y-3 text-sm  rounded-lg p-4 [box-shadow:var(--shadow-m)]">
+                                <h4 className="font-semibold text-gray-800 mb-2 text-base">
                                   {order?.location === "Delivery"
                                     ? "Delivery Details"
                                     : "Takeaway Details"}
                                 </h4>
                                 {order?.location === "Delivery" && (
                                   <div className="flex items-start gap-3">
-                                    <MapPin className="h-4 w-4 text-blue-600 mt-0.5" />
+                                    <MapPin className="h-4 w-4 text-[#FF8080] mt-0.5" />
                                     <div>
                                       <p className="font-medium text-gray-800">
                                         Delivery Address
@@ -558,7 +584,7 @@ export default function Header({ data }: { data: any }) {
                                 )}
 
                                 <div className="flex items-center gap-3">
-                                  <Phone className="h-4 w-4 text-blue-600" />
+                                  <Phone className="h-4 w-4 text-[#FF8080]" />
                                   <div>
                                     <span className="font-medium text-gray-800">
                                       Contact:{" "}
@@ -581,24 +607,48 @@ export default function Header({ data }: { data: any }) {
           ) : (
             <>
               <Button
-                variant="outline"
+                variant="default"
                 onClick={() => {
                   if (!userLogin) {
                     setPhoneDrawerOpen(true);
                   }
                 }}
+                className="bg-[#FF8080] text-white [box-shadow:var(--shadow-m)] hover:bg-[#FF8080]/80"
               >
                 Login
               </Button>
+
               <Drawer open={phoneDrawerOpen} onOpenChange={setPhoneDrawerOpen}>
                 <DrawerContent className="rounded-t-3xl">
                   <DrawerDescription></DrawerDescription>
 
                   <DrawerHeader>
                     <DrawerTitle>
-                      {stage === "phone"
-                        ? "Enter your phone number"
-                        : "Enter  OTP"}
+                      {stage === "phone" ? (
+                        "Enter your phone number"
+                      ) : (
+                        <div className="flex flex-col gap-1 ">
+                          <span className="text-md font-bold">
+                            Verify with OTP
+                          </span>
+                          <span className="text-xs text-muted-foreground tracking-wide">
+                            Sent via SMS to {phoneNumber}
+                          </span>
+                          {user?.tag === "restaurant" && (
+                            <span
+                              className="text-xs text-[#FF8080] tracking-wide "
+                              onClick={() => {
+                                setStage("phone");
+                                setPhoneNumber("");
+                                stopCountdown();
+                                setOtp("");
+                              }}
+                            >
+                              Change number?
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </DrawerTitle>
                   </DrawerHeader>
 
@@ -608,16 +658,19 @@ export default function Header({ data }: { data: any }) {
                         placeholder="Enter your phone number"
                         value={phoneNumber}
                         onChange={(e) => {
-                          const value = e.target.value;
-                          // Only allow numbers and limit to 10 digits
-                          if (/^\d{0,10}$/.test(value)) {
-                            setPhoneNumber(value);
+                          if (/^\d{0,10}$/.test(e.target.value)) {
+                            setPhoneNumber(e.target.value);
                           }
                         }}
                         className="rounded-lg"
                         type="tel"
                         pattern="[0-9]*"
                         maxLength={10}
+                        minLength={10}
+                        inputMode="numeric"
+                        required
+                        aria-invalid={false}
+                        aria-describedby="phone-error"
                         autoFocus
                       />
                     )}
@@ -663,9 +716,14 @@ export default function Header({ data }: { data: any }) {
 
                   <DrawerFooter className="px-3 py-2 bg-background rounded-2xl ">
                     <Button
-                      className="flex-1 py-3 rounded-lg"
+                      className="flex-1 py-3 rounded-lg bg-[#FF8080] text-white [box-shadow:var(--shadow-m)] hover:bg-[#FF8080]/80"
                       onClick={
                         stage === "phone" ? handlePhoneSubmit : handleOtpSubmit
+                      }
+                      disabled={
+                        isLoading ||
+                        phoneNumber.length !== 10 ||
+                        (stage === "otp" && otp.length !== 6)
                       }
                     >
                       {stage === "phone" ? "Continue" : "Verify"}
@@ -681,9 +739,9 @@ export default function Header({ data }: { data: any }) {
         </div>
       </header>
       <div className="px-2 pb-1">
-        <div className="h-12  relative flex items-center rounded-xl border focus-within:ring-1 focus-within:ring-ring  pl-3 ">
+        <div className="h-12  relative flex items-center rounded-xl border focus-within:ring-1 focus-within:ring-ring  pl-3 [box-shadow:var(--shadow-s)]">
           <Search
-            className="h-5 w-5 text-muted-foreground"
+            className="h-5 w-5 text-muted-foreground text-[#FF8080]"
             onClick={() => setExpanded(!expanded)}
             strokeWidth={3}
           />

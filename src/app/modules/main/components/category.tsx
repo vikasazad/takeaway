@@ -56,7 +56,7 @@ export default function Category({ data }: { data: Category[] }) {
                     }}
                   >
                     <div className="flex flex-col items-center space-y-2">
-                      <Avatar className="h-20 w-20">
+                      <Avatar className="h-20 w-20 [box-shadow:var(--shadow-m)]">
                         <AvatarImage
                           src={category.categoryLogo}
                           alt={category.name}

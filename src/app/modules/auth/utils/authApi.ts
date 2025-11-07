@@ -483,7 +483,7 @@ export function findOrderData(
   const docRef = doc(db, email, "hotel");
   const unsubscribe = onSnapshot(docRef, (docSnap) => {
     if (docSnap.exists()) {
-      const prev = docSnap.data()?.customers?.[phone].orders;
+      const prev = docSnap.data()?.customers?.[phone]?.orders;
       const currentDelivery = docSnap.data()?.delivery?.[phone];
       const currentTakeaway = docSnap.data()?.takeaway?.[phone];
       const current = {

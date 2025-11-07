@@ -1,8 +1,6 @@
 import React from "react";
-import DeliveryPage from "../modules/delivery/components/deliveryPage";
+import Delivery from "../modules/delivery/components/delivery";
 
-const page = () => {
-  return <DeliveryPage />;
-};
+const page = () => <Delivery />;
 
 export default page;

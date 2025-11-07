@@ -123,6 +123,23 @@ select:focus {
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+    --bg-dark: hsl(0, 0%, 90%);
+    --bg: hsl(0, 0%, 5%);
+    --bg-light: hsl(0, 0%, 100%);
+    --bg-red: hsl(0, 100%, 76%);
+    --text: hsl(0, 0%, 5%);
+    --text-muted: hsl(0, 0%, 30%);
+    --gradient: linear-gradient(
+      linear-gradient(0deg, var(--bg), var(--bg-light))
+    );
+    --border-card: solid 1px var(--bg);
+    --shadow-s: inset 1px 2px #ffffff30, 0 1px 2px #00000030,
+      0 2px 4px #00000015;
+    --shadow-m: inset 1px 2px #ffffff50, 0 2px 4px #00000030,
+      0 4px 8px #00000015;
+    --shadow-l: inset 1px 2px #ffffff70, 0 4px 6px #00000030,
+      0 6px 10px #00000015;
+    --shadow-inset: inset 0 1px 2px #ff070770;
   }
   .dark {
     --background: 0 0% 3.9%;

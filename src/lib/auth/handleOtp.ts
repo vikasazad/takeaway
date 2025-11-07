@@ -14,31 +14,32 @@ declare global {
 }
 let appVerifier;
 const setupRecaptcha = () => {
-  if (window.recaptchaVerifier) {
-    window.recaptchaVerifier.clear();
+  // Only create new RecaptchaVerifier if it doesn't exist
+  if (!window.recaptchaVerifier) {
+    window.recaptchaVerifier = new RecaptchaVerifier(
+      authentication,
+      "recaptcha-container",
+      {
+        size: "invisible",
+        callback: () => {
+          console.log("Recaptcha Resolved");
+        },
+        "expired-callback": () => {
+          console.log("Recaptcha Expired");
+          window.recaptchaVerifier.reset();
+        },
+      }
+    );
   }
-  window.recaptchaVerifier = new RecaptchaVerifier(
-    authentication,
-    "recaptcha-container",
-    {
-      size: "invisible",
-      callback: () => {
-        console.log("Recaptcha Resolved");
-      },
-      "expired-callback": () => {
-        console.log("Recaptcha Expired");
-        window.recaptchaVerifier.reset();
-      },
-    }
-  );
+  // If it already exists, just reuse it
+  return window.recaptchaVerifier;
 };
 
 export const authPhoneOtp = (
   formattedNumber: string
 ): Promise<PhoneOtpResponse> => {
   return new Promise((resolve, reject) => {
-    setupRecaptcha();
-    appVerifier = window.recaptchaVerifier;
+    appVerifier = setupRecaptcha();
 
     signInWithPhoneNumber(authentication, formattedNumber, appVerifier)
       .then((confirmationResult) => {
@@ -67,7 +68,7 @@ export const resendOtp = (
   formattedNumber: string
 ): Promise<PhoneOtpResponse> => {
   return new Promise((resolve, reject) => {
-    appVerifier = window.recaptchaVerifier;
+    appVerifier = setupRecaptcha(); // Changed from window.recaptchaVerifier
 
     signInWithPhoneNumber(authentication, formattedNumber, appVerifier)
       .then((confirmationResult) => {
