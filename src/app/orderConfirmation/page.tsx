@@ -23,6 +23,14 @@ export default function OrderConfirmation() {
     (state: RootState) => state.delivery?.delivery
   );
   console.log("delivery in order confirmation:", delivery);
+
+  // Cleanup finalOrder when component unmounts
+  React.useEffect(() => {
+    return () => {
+      dispatch(clearFinalOrder());
+    };
+  }, [dispatch]);
+
   // Add useEffect to handle auto-close
   React.useEffect(() => {
     if (finalItem && user?.tag === "concierge") {
@@ -87,7 +95,8 @@ export default function OrderConfirmation() {
 
     localStorage.setItem("tracking-id", finalItem.orderId);
     router.push("/tracking");
-    dispatch(clearFinalOrder());
+    // Don't clear finalOrder here - it causes the component to re-render
+    // and trigger the redirect setTimeout. The tracking page will handle cleanup.
   };
 
   if (!finalItem?.orderId) {

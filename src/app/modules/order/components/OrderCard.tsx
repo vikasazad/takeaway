@@ -165,7 +165,7 @@ export default function OrderCard() {
   const [addressDrawerOpen, setAddressDrawerOpen] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<string>("");
 
-  // console.log("contactDetails", contactDetails);
+  console.log("contactDetails", contactDetails);
 
   const handleCouponApply = async () => {
     setIsCouponLoading(true);
@@ -337,16 +337,15 @@ export default function OrderCard() {
   };
   const handlePlaceOrder = async () => {
     setIsFinalLoading(true);
-    if (user?.address?.length === 0 && selectedToggle === "Delivery") {
+    if (contactDetails.phone === "") {
+      setIsFinalLoading(false);
+      setPhoneDrawerOpen(true);
+      return;
+    } else if (user?.address?.length === 0 && selectedToggle === "Delivery") {
       router.push("/address");
       setIsFinalLoading(false);
       return;
     } else {
-      if (contactDetails.phone === "") {
-        setIsFinalLoading(false);
-        setPhoneDrawerOpen(true);
-        return;
-      }
       setLoadScript(true);
       createOrder();
     }
@@ -783,13 +782,13 @@ export default function OrderCard() {
       phone: user.phone || "",
       tag: "restaurant",
       type:
-        user?.address?.length > 0
-          ? user?.address?.find((item: any) => item.default)?.type
-          : "",
+        user?.address?.find((item: any) => item.default)?.address ||
+        user?.address?.[0]?.address ||
+        "",
       address:
-        user?.address?.length > 0
-          ? user?.address?.find((item: any) => item.default)?.address
-          : "",
+        user?.address?.find((item: any) => item.default)?.type ||
+        user?.address?.[0]?.type ||
+        "",
     });
 
     dispatch(addInfo(data));
