@@ -45,3 +45,17 @@ export async function getRestaurantInfo() {
     return false;
   }
 }
+
+export async function getRestaurantTax() {
+  try {
+    const docRefInfo = doc(db, "vikumar.azad@gmail.com", "info");
+    const docSnapInfo = await getDoc(docRefInfo);
+    if (docSnapInfo.exists()) {
+      return docSnapInfo.data().business.gstTax?.restaurant;
+    }
+    return false;
+  } catch (error) {
+    console.error("Error fetching Firestore data:", error);
+    return false;
+  }
+}

@@ -39,6 +39,7 @@ export const addToOrder = createSlice({
       state.user = action.payload;
     },
     addTax: (state, action) => {
+      console.log("action.payload", action.payload);
       state.user = {
         ...state.user,
         tax: { restaurant: action.payload },
@@ -63,7 +64,7 @@ export const addToOrder = createSlice({
         email: "",
         phone: "",
         tag: "restaurant",
-        tax: { restaurant: {} },
+        tax: {},
         address: [],
       };
       state.info = {};

@@ -154,14 +154,13 @@ export default function OrderCard() {
     email: user?.email || "",
     tag: user?.tag || "restaurant",
     address:
-      (user?.address?.length > 0 &&
-        user?.address?.find((item: any) => item.default)?.address) ||
-      user?.address?.[0].address,
-
+      user?.address?.find((item: any) => item.default)?.address ||
+      user?.address?.[0]?.address ||
+      "",
     type:
-      (user?.address?.length > 0 &&
-        user?.address?.find((item: any) => item.default)?.type) ||
-      user?.address?.[0]?.type,
+      user?.address?.find((item: any) => item.default)?.type ||
+      user?.address?.[0]?.type ||
+      "",
   });
   const [addressDrawerOpen, setAddressDrawerOpen] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<string>("");

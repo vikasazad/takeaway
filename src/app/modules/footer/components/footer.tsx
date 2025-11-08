@@ -12,6 +12,9 @@ import { cn } from "@/lib/utils";
 import { useDispatch, useSelector } from "react-redux";
 import { setActiveItem } from "@/lib/features/activeFooterCategory";
 import { AppDispatch, RootState } from "@/lib/store";
+import { addTax } from "@/lib/features/addToOrderSlice";
+import { toast } from "sonner";
+import { getRestaurantTax } from "../../main/utils/mainRestaurantApi";
 
 export default function Footer({ data }: { data: any }) {
   // console.log("FOOTER", data);
@@ -21,6 +24,15 @@ export default function Footer({ data }: { data: any }) {
   );
   const [activeCategory, setActiveCategory] = React.useState<number>(0);
   const [popoverOpen, setPopoverOpen] = React.useState(false);
+
+  const handleOrderClick = async () => {
+    const tax = await getRestaurantTax();
+    if (!tax) {
+      toast.error("Something went wrong");
+      return;
+    }
+    dispatch(addTax(tax));
+  };
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background z-50 md:w-[430px] md:m-auto">
@@ -93,6 +105,9 @@ export default function Footer({ data }: { data: any }) {
                 variant="ghost"
                 size="icon"
                 className="text-white bg-white/40 hover:text-white hover:bg-white/20"
+                onClick={() => {
+                  handleOrderClick();
+                }}
               >
                 <MoveRight className="h-6 w-6" />
               </Button>

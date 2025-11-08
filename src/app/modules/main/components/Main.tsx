@@ -2,7 +2,6 @@
 
 import React, { useEffect } from "react";
 // import { useSelector } from "react-redux";
-import { useRouter } from "next/navigation";
 // import { RootState } from "@/lib/store";
 import Header from "../../header/components/header";
 import { getRestaurantData } from "../utils/mainRestaurantApi";
@@ -14,7 +13,6 @@ import { useDispatch } from "react-redux";
 
 const Main = () => {
   const dispatch = useDispatch();
-  const router = useRouter();
   // const { isAuthenticated, token } = useSelector(
   //   (state: RootState) => state.auth
   // );
@@ -33,6 +31,7 @@ const Main = () => {
     const fetchData = async () => {
       try {
         const restaurantData = await getRestaurantData();
+        console.log("restaurantData", restaurantData);
         setData(restaurantData);
         dispatch(addTax(restaurantData?.tax));
       } catch (error) {
@@ -43,7 +42,7 @@ const Main = () => {
     };
 
     fetchData();
-  }, [router]);
+  }, []);
 
   // Show loading while checking authentication or fetching data
   if (isLoading) {

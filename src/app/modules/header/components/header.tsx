@@ -62,6 +62,7 @@ import { Icons } from "@/components/ui/icons";
 import {
   addInfo,
   addOrders,
+  addTax,
   addUser,
   clearLogout,
 } from "@/lib/features/addToOrderSlice";
@@ -77,6 +78,7 @@ import { useRouter } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 import { clearDeliveryRedux, setDelivery } from "@/lib/features/deliverySlice";
+import { getRestaurantTax } from "../../main/utils/mainRestaurantApi";
 const useCountdown = (initialCount: number) => {
   const [count, setCount] = useState(0);
 
@@ -294,7 +296,7 @@ export default function Header({ data }: { data: any }) {
   };
 
   const handleAfterLogin = async () => {
-    console.log("userLogin", userLogin);
+    console.log("userLoginnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn", userLogin);
 
     const user = await findUser(phoneNumber, "vikumar.azad@gmail.com");
     if (!user) {
@@ -302,10 +304,22 @@ export default function Header({ data }: { data: any }) {
         phoneNumber,
         "vikumar.azad@gmail.com"
       );
+      const tax = await getRestaurantTax();
+      if (!tax) {
+        toast.error("Something went wrong");
+        return false;
+      }
       if (!register) {
         toast.error("Something went wrong");
         return false;
       }
+    }
+
+    const tax = await getRestaurantTax();
+    console.log("taxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", tax);
+    if (!tax) {
+      toast.error("Something went wrong");
+      return false;
     }
     // setUserLogin(true);
     // Phone will be stored by setupJWTAfterLogin
@@ -314,12 +328,12 @@ export default function Header({ data }: { data: any }) {
         name: user.name || "",
         email: user.email || "",
         phone: user.phone || "",
-        tax: user.tax || {},
         address: user.address || [],
       })
     );
-    dispatch(addInfo(data));
 
+    dispatch(addInfo(data));
+    dispatch(addTax(tax));
     try {
       // Set up JWT after successful login
       await setupJWTAfterLogin(fNumber);
@@ -353,7 +367,6 @@ export default function Header({ data }: { data: any }) {
 
     // Show success message
     toast.success("Logged out successfully");
-    window.location.reload();
     console.log("User logged out successfully");
   };
 
