@@ -67,7 +67,7 @@ export default function Footer({ data }: { data: any }) {
                 </Button>
               </PopoverTrigger>
               <PopoverContent
-                className="w-[calc(100vw-2rem)] max-h-[400px] overflow-y-auto p-0 z-50 "
+                className="w-[calc(100vw-2rem)] max-h-[400px] overflow-y-auto p-0 z-[100]"
                 align="end"
               >
                 <div className="grid">
