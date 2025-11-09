@@ -55,7 +55,7 @@ export default function Footer({ data }: { data: any }) {
               <span className="ml-2 text-xs ">{category.menuItems.length}</span>
             </button>
           ))}
-          <div className="sticky right-[-19px] ml-auto pl-4 bg-gradient-to-l from-white via-white">
+          <div className=" sticky right-[-19px] ml-auto pl-4 bg-gradient-to-l from-white via-white">
             <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -67,7 +67,7 @@ export default function Footer({ data }: { data: any }) {
                 </Button>
               </PopoverTrigger>
               <PopoverContent
-                className="w-[calc(100vw-2rem)] max-h-[400px] overflow-y-auto p-0"
+                className="w-[calc(100vw-2rem)] max-h-[400px] overflow-y-auto p-0 z-50 "
                 align="end"
               >
                 <div className="grid">

@@ -109,7 +109,7 @@ export default function OrderCard() {
     (state: RootState) => state.addToOrderData
   );
 
-  console.log("user", user);
+  console.log("user", info);
 
   const ordereditems = useSelector(
     (state: RootState) => state.addToOrderData.addToOrderData
@@ -781,11 +781,11 @@ export default function OrderCard() {
       email: user.email || "",
       phone: user.phone || "",
       tag: "restaurant",
-      type:
+      address:
         user?.address?.find((item: any) => item.default)?.address ||
         user?.address?.[0]?.address ||
         "",
-      address:
+      type:
         user?.address?.find((item: any) => item.default)?.type ||
         user?.address?.[0]?.type ||
         "",
@@ -1149,7 +1149,10 @@ export default function OrderCard() {
               <div className="flex items-center justify-between w-full">
                 <p className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
                   Total savings with discount
-                  <CircleHelp className="h-4 w-4 cursor-pointer text-[#FF8080]" />
+                  <CircleHelp
+                    className="h-4 w-4 cursor-pointer text-[#FF8080]"
+                    onClick={() => router.push("/coupons")}
+                  />
                 </p>
                 <p className="text-xs text-green-500 font-bold flex items-center ">
                   -<IndianRupee className="h-3 w-3" />
@@ -1470,7 +1473,7 @@ export default function OrderCard() {
                 <span className="text-xs  truncate max-w-[250px]">
                   {selectedToggle === "Delivery"
                     ? contactDetails.address
-                    : info?.address}
+                    : info?.restaurant?.address}
                 </span>
               </div>
               {selectedToggle === "Delivery" && (
