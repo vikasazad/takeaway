@@ -10,6 +10,15 @@ const deliverySlice = createSlice({
   reducers: {
     setDelivery: (state, action) => {
       console.log("action.payload", action.payload);
+
+      // Ensure delivery is always an array (fix for production state corruption)
+      if (!Array.isArray(state.delivery)) {
+        console.warn(
+          "delivery state was not an array, resetting to empty array"
+        );
+        state.delivery = [];
+      }
+
       if (state.delivery.length > 0) {
         if (action.payload.from === "tracking") {
           const existingOrder = state.delivery?.some(

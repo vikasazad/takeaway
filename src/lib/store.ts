@@ -46,7 +46,19 @@ const addToOrderPersistConfig = {
 const deliveryPersistConfig = {
   key: "deliveryData",
   storage,
+  version: 1, // Increment this when you need to reset the persisted state
   whitelist: ["delivery"], // Only persist the delivery field
+  migrate: (state: any) => {
+    // Migration to fix corrupted delivery state
+    if (state && !Array.isArray(state.delivery)) {
+      console.warn("Migrating corrupted delivery state to empty array");
+      return {
+        ...state,
+        delivery: [],
+      };
+    }
+    return state;
+  },
 };
 
 // Combine all reducers
