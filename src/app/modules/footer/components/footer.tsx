@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import Link from "next/link";
+// import Link from "next/link";
 import { IndianRupee, MoveRight, Utensils } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,9 +15,11 @@ import { AppDispatch, RootState } from "@/lib/store";
 import { addTax } from "@/lib/features/addToOrderSlice";
 import { toast } from "sonner";
 import { getRestaurantTax } from "../../main/utils/mainRestaurantApi";
+import { useRouter } from "next/navigation";
 
 export default function Footer({ data }: { data: any }) {
   // console.log("FOOTER", data);
+  const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const ordereditems = useSelector(
     (state: RootState) => state.addToOrderData.addToOrderData
@@ -32,6 +34,7 @@ export default function Footer({ data }: { data: any }) {
       return;
     }
     dispatch(addTax(tax));
+    router.push("/order");
   };
 
   return (
@@ -100,18 +103,17 @@ export default function Footer({ data }: { data: any }) {
             <div className="text-lg font-medium">
               {ordereditems.length} Item added
             </div>
-            <Link href="/order">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white bg-white/40 hover:text-white hover:bg-white/20"
-                onClick={() => {
-                  handleOrderClick();
-                }}
-              >
-                <MoveRight className="h-6 w-6" />
-              </Button>
-            </Link>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white bg-white/40 hover:text-white hover:bg-white/20"
+              onClick={() => {
+                handleOrderClick();
+              }}
+            >
+              <MoveRight className="h-6 w-6" />
+            </Button>
           </div>
           <div className="flex items-center justify-center text-sm text-center mt-1 text-white/90">
             Add items worth <IndianRupee className="w-4 h-4" />
