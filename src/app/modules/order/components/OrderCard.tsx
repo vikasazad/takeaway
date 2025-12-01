@@ -559,54 +559,54 @@ export default function OrderCard() {
             router.push("/orderConfirmation");
           });
         } else {
-          const orderId =
-            selectedToggle === "Delivery"
-              ? generateOrderId("RES", "DEL")
-              : generateOrderId("RES", "TY");
-          const gst = calculateTax(
-            calculateTotal(ordereditems) - (discount || 0),
-            calculateTotal(ordereditems) - (discount || 0),
-            user?.tag === "hotel" ? "dining" : "restaurant",
-            user?.tax
-          );
-          console.log("New Order ID:", orderId);
-          console.log("first", ordereditems);
-          const orderData: any = {
-            razorpayOrderId: response.razorpay_order_id,
-            razorpayPaymentId: response.razorpay_payment_id,
-            orderId: orderId,
-            orderSuccess: false,
-            orderedItem: [],
-            orderAmount: finalPrice,
-            subtotal: calculateTotal(ordereditems),
-            gstPercentage: gst.gstPercentage || "",
-            gstAmount: gst.gstAmount || "",
-            cgstAmount: gst.cgstAmount,
-            cgstPercentage: gst.cgstPercentage,
-            sgstAmount: gst.sgstAmount,
-            sgstPercentage: gst.sgstPercentage,
-            contactNo: "",
-            name: "",
-            email: "",
-            problemFood: "",
-            problemService: "",
-            timeOfOrder: new Date().toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-            }),
-            timeOfService: "",
-            tableNo: "T-8",
-            estimatedDeliveryTime: "",
-            deliveryAddress: "",
-            specialrequirements: specialRequirements,
-          };
-          ordereditems.map((er: any) => {
-            return orderData.orderedItem.push(createOrderData(er));
-          });
-          dispatch(setFinalOrder(orderData));
-          console.log(orderData);
-          router.push("/orderConfirmation");
+          // const orderId =
+          //   selectedToggle === "Delivery"
+          //     ? generateOrderId("RES", "DEL")
+          //     : generateOrderId("RES", "TY");
+          // const gst = calculateTax(
+          //   calculateTotal(ordereditems) - (discount || 0),
+          //   calculateTotal(ordereditems) - (discount || 0),
+          //   user?.tag === "hotel" ? "dining" : "restaurant",
+          //   user?.tax
+          // );
+          // console.log("New Order ID:", orderId);
+          // console.log("first", ordereditems);
+          // const orderData: any = {
+          //   razorpayOrderId: response.razorpay_order_id,
+          //   razorpayPaymentId: response.razorpay_payment_id,
+          //   orderId: orderId,
+          //   orderSuccess: false,
+          //   orderedItem: [],
+          //   orderAmount: finalPrice,
+          //   subtotal: calculateTotal(ordereditems),
+          //   gstPercentage: gst.gstPercentage || "",
+          //   gstAmount: gst.gstAmount || "",
+          //   cgstAmount: gst.cgstAmount,
+          //   cgstPercentage: gst.cgstPercentage,
+          //   sgstAmount: gst.sgstAmount,
+          //   sgstPercentage: gst.sgstPercentage,
+          //   contactNo: "",
+          //   name: "",
+          //   email: "",
+          //   problemFood: "",
+          //   problemService: "",
+          //   timeOfOrder: new Date().toLocaleTimeString("en-US", {
+          //     hour: "2-digit",
+          //     minute: "2-digit",
+          //     hour12: true,
+          //   }),
+          //   timeOfService: "",
+          //   tableNo: "T-8",
+          //   estimatedDeliveryTime: "",
+          //   deliveryAddress: "",
+          //   specialrequirements: specialRequirements,
+          // };
+          // ordereditems.map((er: any) => {
+          //   return orderData.orderedItem.push(createOrderData(er));
+          // });
+          // dispatch(setFinalOrder(orderData));
+          // console.log(orderData);
+          // router.push("/orderConfirmation");
           alert("Payment failed");
         }
       },
