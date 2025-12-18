@@ -85,7 +85,7 @@ export default function Delivery() {
   const [isLoadingOrder, setIsLoadingOrder] = useState(true);
   const [isCameraLocked, setIsCameraLocked] = useState(true);
   const [copied, setCopied] = useState<Record<string, boolean>>({});
-  const animationFrame = useRef<number>();
+  const animationFrame = useRef<number | null>(null);
 
   // Check if delivery data is available
   const isDeliveryAvailable = delivery && Object.keys(delivery).length > 0;
